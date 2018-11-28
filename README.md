@@ -4,7 +4,7 @@
 ## 快速开始 - demo_led
 `demo_led`示例演示将设备接入Link IoT Edge的全过程。
 
-### demo编译演示准备
+### demo编译演示准备
 demo编译演示准备见[编译演示准备](docs/develop-guide.md)
 
 ### demo编译
