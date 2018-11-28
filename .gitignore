@@ -23,3 +23,4 @@ demo/led/demo_led.zip
 demo/led/main
 demo/led_with_thrd_lib/demo_led.zip
 demo/led_with_thrd_lib/main
+demo/led_with_thrd_lib/include/
