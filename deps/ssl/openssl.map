@@ -1,0 +1,23 @@
+OPENSSL_1.0.0 {
+    global:
+        *;
+};
+
+OPENSSL_1.0.1 {
+    global:
+        TLSv1_2_client_method;
+        SSL_CTX_set_srp_username;
+        SSL_CTX_set_srp_password;
+        SSL_CTX_set_next_proto_select_cb;
+} OPENSSL_1.0.0;
+
+OPENSSL_1.0.2 {
+    global:
+        SSL_get0_alpn_selected;
+        SSL_get0_param;
+        SSL_CTX_get0_certificate;
+        SSL_COMP_free_compression_methods;
+        X509_VERIFY_PARAM_set1_host;
+        X509_VERIFY_PARAM_set_hostflags;
+        SSL_CTX_set_alpn_protos;
+} OPENSSL_1.0.1;

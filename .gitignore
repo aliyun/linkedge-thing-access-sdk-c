@@ -3,50 +3,23 @@
 
 # Object files
 *.o
-*.ko
-*.obj
-*.elf
-
-# Linker output
-*.ilk
-*.map
-*.exp
-
-# Precompiled Headers
-*.gch
-*.pch
 
 # Libraries
-*.lib
 *.a
-*.la
-*.lo
 
 # Shared objects (inc. Windows DLLs)
-*.dll
 *.so
 *.so.*
-*.dylib
 
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
+# Dynamic file
+build/
+deps/cJSON-master/*
+deps/dbus-1.10.18/*
+deps/libwebsockets/*
+deps/ssl/*
 
-# Debug files
-*.dSYM/
-*.su
-*.idb
-*.pdb
-
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
+# Binary
+demo/led/demo_led.zip
+demo/led/main
+demo/led_with_thrd_lib/demo_led.zip
+demo/led_with_thrd_lib/main
