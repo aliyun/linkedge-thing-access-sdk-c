@@ -195,16 +195,6 @@ device_handle_t leda_register_and_online_by_device_name(const char *product_key,
 device_handle_t leda_register_and_online_by_local_name(const char *product_key, const char *local_name, leda_device_callback_t *device_cb, void *usr_data);
 
 /*
- * 注销设备, 解除设备和LinkEdge关联.
- *
- * dev_handle:  设备在linkedge本地唯一标识.
- *
- * 阻塞接口, 成功返回LE_SUCCESS,  失败返回错误码.
- *
- */
-int leda_unregister(device_handle_t dev_handle);
-
-/*
  * 模块初始化, 模块内部会创建工作线程池, 异步执行云端下发的指令, 工作线程数目通过worker_thread_nums配置.
  *
  * module_name:         模块名称.
@@ -282,17 +272,6 @@ typedef int (*config_changed_callback)(const char *module_name, const char *conf
  * 阻塞接口, 成功返回LE_SUCCESS,失败返回错误码.
  */
 int leda_register_config_changed_callback(const char *module_name, config_changed_callback config_cb);
-
-/*
- * 喂看门狗.
- *
- * module_name: 模块名称.
- * thread_name: 需要保活的线程名称.
- * count_down_seconds : 倒计时时间, -1表示停止保活, 单位:秒.
- *
- * 阻塞接口, 成功返回LE_SUCCESS, 失败返回错误码.
- */
-int leda_feed_watchdog(const char *module_name, const char *thread_name, int count_down_seconds);
 
 /*
  * 获取设备句柄.

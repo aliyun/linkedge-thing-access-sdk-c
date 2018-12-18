@@ -44,7 +44,6 @@ demo编译演示准备见[编译演示准备](docs/develop-guide.md)
 - **[leda_register_config_changed_callback](#leda_register_config_changed_callback)**
 - **[leda_register_and_online_by_device_name](#leda_register_and_online_by_device_name)**
 - **[leda_register_and_online_by_local_name](#leda_register_and_online_by_local_name)**
-- **[leda_unregister](#leda_unregister)**
 - **[leda_online](#leda_online)**
 - **[leda_offline](#leda_offline)**
 - **[leda_report_properties](#leda_report_properties)**
@@ -53,7 +52,6 @@ demo编译演示准备见[编译演示准备](docs/develop-guide.md)
 - **[leda_get_tsl](#leda_get_tsl)**
 - **[leda_get_config_size](#leda_get_config_size)**
 - **[leda_get_config](#leda_get_config)**
-- **[leda_feed_watchdog](#leda_feed_watchdog)**
 - **[leda_get_device_handle](#leda_get_device_handle)**
 - **[leda_exit](#leda_exit)**
 - **[leda_get_module_name](#leda_get_module_name)**
@@ -209,21 +207,6 @@ device_handle_t leda_register_and_online_by_local_name(const char *product_key, 
 ```
 
 ---
-<a name="leda_unregister"></a>
-``` c
-/*
- * 注销设备, 解除设备和Link IoT Edge关联.
- *
- * dev_handle:  设备在Link IoT Edge本地唯一标识.
- *
- * 阻塞接口, 成功返回LE_SUCCESS,  失败返回错误码.
- *
- */
-int leda_unregister(device_handle_t dev_handle);
-
-```
-
----
 <a name="leda_online"></a>
 ``` c
 /*
@@ -347,22 +330,6 @@ int leda_get_config_size(const char *module_name);
  * 阻塞接口, 成功返回LE_SUCCESS, 失败返回错误码.
  */
 int leda_get_config(const char *module_name, char *config, int size);
-
-```
-
----
-<a name="leda_feed_watchdog"></a>
-``` c
-/*
- * 喂看门狗.
- *
- * module_name: 模块名称.
- * thread_name: 需要保活的线程名称.
- * count_down_seconds : 倒计时时间, -1表示停止保活, 单位:秒.
- *
- * 阻塞接口, 成功返回LE_SUCCESS, 失败返回错误码.
- */
-int leda_feed_watchdog(const char *module_name, const char *thread_name, int count_down_seconds);
 
 ```
 

@@ -49,6 +49,7 @@ typedef enum leda_info_type
     INFO_TYPE_BUTT
 } leda_data_info_e;
 
+static char                                 *g_module_name = NULL;
 static DBusConnection                       *g_connection = NULL;   /* dbus连接句柄 */
 static pthread_t                            g_methodcb_thread_id;   /* 线程句柄 */
 static device_handle_t                      g_device_handle  = 0;   /* device handle分配索引 */
@@ -56,8 +57,6 @@ static device_handle_t                      g_device_handle  = 0;   /* device ha
 extern pthread_mutex_t                      g_methodcb_list_lock;
 extern pthread_mutex_t                      g_leda_replay_lock;
 extern pthread_mutex_t                      g_device_configcb_lock;
-
-extern char                                 *g_module_name;
 
 static device_handle_t _get_unique_device_handle(void)
 {
@@ -720,7 +719,6 @@ static device_handle_t _leda_register_and_online(const char *product_key,
     if (LE_SUCCESS != ret)
     {
         log_e(LEDA_TAG_NAME, "call method failed, ret:%d product_key:%s name:%s\r\n", ret, product_key, name);
-        leda_unregister(device_info->dev_handle);
         return LE_ERROR_UNKNOWN;
     }
 

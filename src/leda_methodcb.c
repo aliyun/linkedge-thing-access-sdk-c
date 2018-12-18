@@ -41,8 +41,6 @@ extern "C"
 {
 #endif
 
-char *g_module_name = NULL;
-
 LIST_HEAD(leda_cb_head);
 pthread_mutex_t g_methodcb_list_lock;
 
@@ -1071,7 +1069,6 @@ void *leda_methodcb_thread(void *arg)
     const char *method_name = NULL;
     int msg_type;
     char *cloud_id = NULL;
-    int watchdog_timer = 0;
     
     log_d(LEDA_TAG_NAME, "leda_method_thread\r\n");
 
@@ -1087,13 +1084,6 @@ void *leda_methodcb_thread(void *arg)
 
     while (dbus_connection_get_is_connected(connect_info->connection))
     {
-        watchdog_timer++;
-        if (watchdog_timer >= 100)
-        {
-            watchdog_timer = 0;
-            leda_feed_watchdog(g_module_name, LEDA_TAG_NAME, 600);
-        }
-    
         dbus_connection_read_write(connect_info->connection, 10);
         do
         {
