@@ -5,10 +5,10 @@ INCLUDE_PATH = -I$(PWD)/build/include
 INCLUDE      = -I./ -I./include $(INCLUDE_PATH)/ $(INCLUDE_PATH)/ssl $(INCLUDE_PATH)/cjson $(INCLUDE_PATH)/dbus-1.0
 
 LIB_PATH = -L$(PWD)/build/lib -L./lib
-LIB 	 =  -lssl		  \
+LIB 	 =  -lleda_sdk_c  \
+			-lssl		  \
 	  		-lwebsockets  \
 	  		-lcrypto	  \
-			-lleda_sdk_c  \
 			-llogger	  \
 			-lcjson       \
 			-lpthread     \
