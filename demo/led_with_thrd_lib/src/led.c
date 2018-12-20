@@ -203,7 +203,7 @@ static void *thread_device_data(void *arg)
     int i = 0;
 
     prctl(PR_SET_NAME, "demo_led_data");
-    while (0 != g_LedRunState)
+    while (0 == g_LedRunState)
     {
         for (i = 0; i < g_dev_handle_count; i++)
         {
@@ -242,7 +242,7 @@ static void ledSigInt(int sig)
 {
     if (sig && (SIGINT == sig))
     {
-        if (0 != g_LedRunState)
+        if (0 == g_LedRunState)
         {
             log_e(LED_TAG_NAME, "Caught signal: %s, exiting...\r\n", strsignal(sig));
         }
@@ -313,7 +313,7 @@ int main(int argc, char** argv)
 
     /* keep driver running */
     prctl(PR_SET_NAME, "demo_led_main");
-    while (0 != g_LedRunState)
+    while (0 == g_LedRunState)
     {
         sleep(5);
     }
