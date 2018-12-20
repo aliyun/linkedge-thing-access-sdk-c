@@ -144,13 +144,13 @@ static int parse_driverconfig_and_onlinedevice(const char* driver_config)
                 如果用户在自定义配置中填写内容为
                 { 
                     "ip" : "192.168.1.199",
-                    "port" 9999
+                    "port" : 9999
                 }
 
                 则实际生成结果为
                 "custom" : { 
                     "ip" : "192.168.1.199",
-                    "port" 9999
+                    "port" : 9999
                 }
 
                 下面给出解析自定义配置的示例代码，具体如下
