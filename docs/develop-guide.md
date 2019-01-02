@@ -42,7 +42,7 @@
 ### 编译步骤
     $ git clone git@github.com:aliyun/link-iot-edge-access-sdk-c.git
     
-    $ cd driver
+    $ cd link-iot-edge-access-sdk-c
     
     $ make prepare              #生成leda_sdk_c需要的依赖库
 
