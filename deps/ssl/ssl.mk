@@ -8,7 +8,7 @@ pre_make:
 	tar zxf $(LIB_TAR).tar.gz
 	cp openssl.map ./$(LIB_TAR)
 	cd ./$(LIB_TAR) \
-		&& ./Configure linux-generic32 \
+		&& ./Configure linux-generic64 \
 		shared \
 		threads \
 		--prefix=$(OUTPUT_DIR) \

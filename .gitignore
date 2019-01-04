@@ -17,10 +17,9 @@ deps/cJSON-master/*
 deps/dbus-1.10.18/*
 deps/libwebsockets/*
 deps/ssl/*
+deps/libexpat/*
 
 # Binary
 demo/led/demo_led.zip
 demo/led/main
-demo/led_with_thrd_lib/demo_led.zip
-demo/led_with_thrd_lib/main
-demo/led_with_thrd_lib/include/
+demo/led/lib/

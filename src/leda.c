@@ -1253,6 +1253,8 @@ void leda_exit(void)
         runtime_exit();
     }
 
+    log_i(LEDA_TAG_NAME, "driver initiative exit, bye bye!!!\r\n");
+
     exit(0);
 
     return;

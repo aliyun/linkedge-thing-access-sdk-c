@@ -5,7 +5,7 @@
 `demo_led`示例演示将设备接入Link IoT Edge的全过程。
 
 ### demo编译演示准备
-demo编译演示准备见[编译演示准备](docs/develop-guide.md)
+接入SDK编译条件和demo编译演示准备见[编译演示准备](docs/develop-guide.md)
 
 ### demo编译
     $ git clone git@github.com:aliyun/link-iot-edge-access-sdk-c.git

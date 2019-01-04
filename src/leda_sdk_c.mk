@@ -4,7 +4,8 @@ CONFIG_MBUS_UNIX_PATH = /tmp/var/run/mbusd/mbusd_socket
 CFLAGS  = -g -Wall -O2 
 CFLAGS  += -Dbus_address=\"unix:path=$(CONFIG_MBUS_UNIX_PATH)\"
 
-OBJS = ./runtime/websocket_client/ws_client.o \
+OBJS = ./log/log.o \
+	   ./runtime/websocket_client/ws_client.o \
 	   ./runtime/websocket_client/ws_client_network.o \
 	   ./runtime/websocket_client/ws_client_callback.o \
 	   ./runtime/websocket_client/wsc_buffer_mgmt.o \
@@ -17,7 +18,7 @@ OBJS = ./runtime/websocket_client/ws_client.o \
 STATIC_LIB   = ../lib/libleda_sdk_c.a
 
 INCLUDE_PATH =  -I$(PWD)/build/include
-INCLUDE      = -I./ -I../include $(INCLUDE_PATH) $(INCLUDE_PATH)/ssl -I./runtime/websocket_client -I./runtime/ $(INCLUDE_PATH)/cjson $(INCLUDE_PATH)/dbus-1.0
+INCLUDE      = -I./ -I../include $(INCLUDE_PATH) $(INCLUDE_PATH)/cjson $(INCLUDE_PATH)/dbus-1.0 $(INCLUDE_PATH)/ssl -I./runtime/websocket_client -I./runtime/
 
 all : $(STATIC_LIB) install
 
@@ -27,7 +28,7 @@ $(OBJS):%o:%c
 $(STATIC_LIB) : $(OBJS)
 	-$(RM) $@
 	mkdir -p ../lib/
-	ar cr $@ $(OBJS)
+	$(AR) cr $@ $(OBJS)
 
 install:
 	cp $(STATIC_LIB) $(PWD)/build/lib/

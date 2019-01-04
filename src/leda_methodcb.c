@@ -1191,14 +1191,20 @@ void *leda_methodcb_thread(void *arg)
                 free(cloud_id);
             }
             dbus_message_unref(message);
-        }while(message != NULL);
+        } while(message != NULL);
 
-        if(RUN_STATE_EXIT == g_run_state)
+        if (RUN_STATE_EXIT == g_run_state)
         {
             leda_pool_destroy();
             free(connect_info);
             pthread_exit(0);
         }
+    }
+
+    if (RUN_STATE_NORMAL == g_run_state)
+    {
+        log_f(LEDA_TAG_NAME, "the connection with the dbus daemon disconnect!!! the driver have to exit!!!\r\n");
+        exit(0);
     }
 
     return NULL;
