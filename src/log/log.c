@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include <errno.h>
 
 #include "log.h"
 
@@ -30,8 +31,15 @@
 extern "C" {
 #endif
 
+#define PRINT_WITH_TIMESTAMP 0
+
+#if PRINT_WITH_TIMESTAMP
 //date [module] level <tag> file-func:line content
 #define LOG_FMT_VRB  "%s %s <%s> %s-%s:%d "
+#else
+//[module] level <tag> file-func:line content
+#define LOG_FMT_VRB  "%s <%s> %s-%s:%d "
+#endif
 
 static const char *g_log_desc[] = 
 { 
@@ -44,6 +52,7 @@ static const char *g_log_desc[] =
 
 static int g_log_lvl = LOG_LEVEL_ERR;
 
+#if PRINT_WITH_TIMESTAMP
 static char *get_timestamp(char *buf, int len, time_t cur_time)
 {
     struct tm tm_time;
@@ -56,6 +65,7 @@ static char *get_timestamp(char *buf, int len, time_t cur_time)
              tm_time.tm_min, tm_time.tm_sec);
     return buf;
 }
+#endif
 
 #define color_len_fin strlen(COL_DEF)
 #define color_len_start strlen(COL_RED)
@@ -70,8 +80,11 @@ void log_print(unsigned char lvl, const char *color, const char *t, const char *
 
     char *tmp = NULL;
     int len = 0;
+
+#if PRINT_WITH_TIMESTAMP
     char buf_date[20] = {0};
     time_t cur_time = time(NULL);
+#endif
 
     t = !t ? "\b" : t;
     f = !f ? "\b" : f;
@@ -88,13 +101,19 @@ void log_print(unsigned char lvl, const char *color, const char *t, const char *
     }
 
     memset(buf, 0, MAX_MSG_LEN + 1);
+
     //add color support
     if (color) 
         strcat(buf, color);
 
+#if PRINT_WITH_TIMESTAMP
     snprintf(buf + strlen(buf), MAX_MSG_LEN - strlen(buf), LOG_FMT_VRB,
                  get_timestamp(buf_date, 20, cur_time),
                  g_log_desc[lvl], t, f, func, l);
+#else
+    snprintf(buf + strlen(buf), MAX_MSG_LEN - strlen(buf), LOG_FMT_VRB,
+                 g_log_desc[lvl], t, f, func, l);
+#endif
 
     len = MAX_MSG_LEN - strlen(buf) - color_len_fin - 5;
     len = len <= 0 ? 0 : len;
@@ -129,6 +148,11 @@ int log_init(const char *name, LOG_STORE_TYPE type, LOG_LEVEL lvl, LOG_MODE mode
         g_log_lvl = LOG_LEVEL_ERR; 
     else 
         g_log_lvl = lvl;
+
+    if (setvbuf(stdout, NULL, _IOLBF, 0))
+    {
+        printf("setbuf error: %s\n", strerror(errno));
+    }
 
     return 0;
 }
