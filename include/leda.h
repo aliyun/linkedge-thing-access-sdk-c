@@ -294,6 +294,8 @@ device_handle_t leda_get_device_handle(const char *product_key, const char *devi
 /*
  * 获取驱动模块名称.
  *
+ * 该接口获取在阿里云物联网平台上传驱动时填写的驱动模块名称
+ *
  * 阻塞接口, 成功返回驱动模块名称, 失败返回NULL.
  */
 char* leda_get_module_name(void);
