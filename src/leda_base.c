@@ -455,12 +455,13 @@ char *leda_retmsg_create(int ret, char *params)
         }
         else
         {
-            cJSON_AddStringToObject(object, "params", params);
+            log_e(LEDA_TAG_NAME, "the downstream data %s is not object\r\n", params);
+            cJSON_AddItemToObject(object, "params", cJSON_CreateObject());
         }
     }
     else
     {
-        cJSON_AddStringToObject(object, "params", "");
+        cJSON_AddItemToObject(object, "params", cJSON_CreateObject());
     }
 
     info = cJSON_Print(object);
@@ -787,12 +788,13 @@ char *leda_mothedret_create(int code, const leda_device_data_t data[], int count
         }
         else
         {
-            cJSON_AddStringToObject(object, "data", params);
+            log_e(LEDA_TAG_NAME, "the method downstream data %s is not object\r\n", params);
+            cJSON_AddItemToObject(object, "data", cJSON_CreateObject());
         }
     }
     else
     {
-        cJSON_AddStringToObject(object, "data", "");
+        cJSON_AddItemToObject(object, "data", cJSON_CreateObject());
     }
 
     info = cJSON_Print(object);

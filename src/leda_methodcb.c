@@ -537,7 +537,7 @@ static void _leda_deviceconnect_message_proc(DBusConnection *connection, DBusMes
     }
     dbus_error_free(&dbus_error);
 
-    result = leda_retmsg_create(LE_SUCCESS, "");
+    result = leda_retmsg_create(LE_SUCCESS, NULL);
     
     reply = dbus_message_new_method_return(message);
     dbus_message_append_args(reply, DBUS_TYPE_STRING, &result, DBUS_TYPE_INVALID);
@@ -807,7 +807,7 @@ static void *_leda_methodcb_proc(void *arg)
     device_info = leda_copy_device_info(leda_get_methodcb_by_cloud_id(methodcall_info->cloud_id));
     if(NULL == device_info)
     {
-        info = leda_retmsg_create(LE_ERROR_INVAILD_PARAM, "");
+        info = leda_retmsg_create(LE_ERROR_INVAILD_PARAM, NULL);
         goto err;
     }
 
@@ -817,7 +817,7 @@ static void *_leda_methodcb_proc(void *arg)
 
     if(strcmp(methodcall_info->method_name, DMP_METHOD_CALLMETHOD))
     {
-        info = leda_retmsg_create(LE_ERROR_INVAILD_PARAM, "");
+        info = leda_retmsg_create(LE_ERROR_INVAILD_PARAM, NULL);
         goto err;
     }
 
@@ -832,7 +832,7 @@ static void *_leda_methodcb_proc(void *arg)
         params_count = leda_transform_data_json_to_struct(device_info->product_key, methodcall_info->service_name, item, &dev_data_input);        
         if ((params_count == 0) || (NULL == dev_data_input))
         {
-            info = leda_retmsg_create(LE_ERROR_INVAILD_PARAM, "");
+            info = leda_retmsg_create(LE_ERROR_INVAILD_PARAM, NULL);
             goto err;
         }
 
@@ -848,7 +848,7 @@ static void *_leda_methodcb_proc(void *arg)
         params_count = leda_transform_data_json_to_struct(device_info->product_key, methodcall_info->service_name, item, &dev_data_input);
         if ((params_count == 0) || (NULL == dev_data_input))
         {
-            info = leda_retmsg_create(LE_ERROR_INVAILD_PARAM, "");
+            info = leda_retmsg_create(LE_ERROR_INVAILD_PARAM, NULL);
             goto err;
         }
         
@@ -856,7 +856,7 @@ static void *_leda_methodcb_proc(void *arg)
                                                 dev_data_input, 
                                                 params_count, 
                                                 device_info->usr_data);
-        info = leda_retmsg_create(ret, "{}");
+        info = leda_retmsg_create(ret, NULL);
     }
     else
     {
@@ -866,7 +866,7 @@ static void *_leda_methodcb_proc(void *arg)
             dev_data_output = malloc(sizeof(leda_device_data_t) * device_info->service_output_max_count);
             if (NULL == dev_data_output)
             {
-                info = leda_retmsg_create(LE_ERROR_ALLOCATING_MEM, "");
+                info = leda_retmsg_create(LE_ERROR_ALLOCATING_MEM, NULL);
                 goto err;
             }
 
@@ -955,14 +955,14 @@ static void _leda_methodcb_send(DBusConnection *connection, char *cloud_id, DBus
 
     if(NULL == method_name)
     {
-        info = leda_retmsg_create(LE_ERROR_INVAILD_PARAM, "");
+        info = leda_retmsg_create(LE_ERROR_INVAILD_PARAM, NULL);
     }
     else
     {
         methodcall_info = (leda_methodcall_info_t *)malloc(sizeof(leda_methodcall_info_t));
         if(NULL == methodcall_info)
         {
-            info = leda_retmsg_create(LE_ERROR_ALLOCATING_MEM, "");
+            info = leda_retmsg_create(LE_ERROR_ALLOCATING_MEM, NULL);
             goto err;
         }
         memset(methodcall_info, 0, sizeof(leda_methodcall_info_t));
@@ -970,7 +970,7 @@ static void _leda_methodcb_send(DBusConnection *connection, char *cloud_id, DBus
         methodcall_info->cloud_id = (char *)malloc(strlen(cloud_id)+1);
         if(NULL == methodcall_info->cloud_id)
         {
-            info = leda_retmsg_create(LE_ERROR_ALLOCATING_MEM, "");
+            info = leda_retmsg_create(LE_ERROR_ALLOCATING_MEM, NULL);
             goto err;
         }
         strcpy(methodcall_info->cloud_id, cloud_id);
@@ -978,7 +978,7 @@ static void _leda_methodcb_send(DBusConnection *connection, char *cloud_id, DBus
         methodcall_info->method_name = (char *)malloc(strlen(method_name)+1);
         if(NULL == methodcall_info->method_name)
         {
-            info = leda_retmsg_create(LE_ERROR_ALLOCATING_MEM, "");
+            info = leda_retmsg_create(LE_ERROR_ALLOCATING_MEM, NULL);
             goto err;
         }
         strcpy(methodcall_info->method_name, method_name);
@@ -989,7 +989,7 @@ static void _leda_methodcb_send(DBusConnection *connection, char *cloud_id, DBus
                 DBUS_TYPE_STRING, &params, DBUS_TYPE_INVALID);
             if(NULL == service_name)
             {
-                info = leda_retmsg_create(LE_ERROR_INVAILD_PARAM, "");
+                info = leda_retmsg_create(LE_ERROR_INVAILD_PARAM, NULL);
                 goto err;
             }
             if((dbus_error_is_set(&dbus_error)) || (NULL == params))
@@ -1001,7 +1001,7 @@ static void _leda_methodcb_send(DBusConnection *connection, char *cloud_id, DBus
                 methodcall_info->params = (char *)malloc(strlen(params)+1);
                 if(NULL == methodcall_info->params)
                 {
-                    info = leda_retmsg_create(LE_ERROR_ALLOCATING_MEM, "");
+                    info = leda_retmsg_create(LE_ERROR_ALLOCATING_MEM, NULL);
                     goto err;
                 }
                 strcpy(methodcall_info->params, params);
@@ -1009,7 +1009,7 @@ static void _leda_methodcb_send(DBusConnection *connection, char *cloud_id, DBus
             methodcall_info->service_name = (char *)malloc(strlen(service_name)+1);
             if(NULL == methodcall_info->service_name)
             {
-                info = leda_retmsg_create(LE_ERROR_ALLOCATING_MEM, "");
+                info = leda_retmsg_create(LE_ERROR_ALLOCATING_MEM, NULL);
                 goto err;
             }
             strcpy(methodcall_info->service_name, service_name);
@@ -1017,7 +1017,7 @@ static void _leda_methodcb_send(DBusConnection *connection, char *cloud_id, DBus
         else
         {
             log_e(LEDA_TAG_NAME, "method:%s not support\r\n", methodcall_info->method_name);
-            info = leda_retmsg_create(LE_ERROR_INVAILD_PARAM, "");
+            info = leda_retmsg_create(LE_ERROR_INVAILD_PARAM, NULL);
             goto err;
         }
         
