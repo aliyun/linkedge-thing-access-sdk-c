@@ -120,6 +120,10 @@ static int _leda_get_itemtype_from_tsl_serviecs(const char* product_key, const c
                 {
                     ret = LEDA_TYPE_DOUBLE;
                 }
+                else if (!strcmp(type_obj->valuestring, "text"))
+                {
+                    ret = LEDA_TYPE_TEXT;
+                }
                 
                 goto END;
             }
