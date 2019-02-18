@@ -8,8 +8,6 @@ prepare :
 	$(MAKE) -C deps -f cjson.mk
 	$(MAKE) -C deps -f expat.mk
 	$(MAKE) -C deps -f dbus-1.mk
-	$(MAKE) -C deps/ssl -f ssl.mk pre_make make install
-	$(MAKE) -C deps -f libwebsockets.mk pre_make make install
 
 # linkedge device access sdk
 leda_sdk_c :
@@ -28,7 +26,6 @@ remove:
 	-$(RM) -r ./build
 	-$(RM) -r ./deps/cJSON-master/
 	-$(RM) -r ./deps/dbus-1.10.18/
-	-$(RM) -r ./deps/ssl/openssl-1.0.2p/
 	-$(RM) -r ./deps/libexpat-fbc46fa/
 
 .PHONY: deps demo src

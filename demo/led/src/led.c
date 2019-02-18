@@ -19,9 +19,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <pthread.h>
 #include <unistd.h>
-#include <sys/prctl.h>
 #include <cJSON.h>
 
 #include "log.h"
@@ -120,7 +118,7 @@ static int get_and_parse_deviceconfig(const char* module_name)
     leda_device_callback_t      device_cb;
     device_handle_t             dev_handle      = -1;
 
-    /* get device config */
+    /* 获取驱动设备配置 */
     size = leda_get_config_size(module_name);
     if (size >0)
     {
@@ -138,6 +136,7 @@ static int get_and_parse_deviceconfig(const char* module_name)
         }
     }
 
+    /* 解析驱动设备配置 */
     root = cJSON_Parse(device_config);
     if (NULL == root)
     {
@@ -150,14 +149,18 @@ static int get_and_parse_deviceconfig(const char* module_name)
     {
         if (cJSON_Object == item->type)
         {
-            /* parse device config */
+            /* 按照配置格式解析内容 */
             result = cJSON_GetObjectItem(item, "productKey");
             productKey = result->valuestring;
             
             result = cJSON_GetObjectItem(item, "deviceName");
             deviceName = result->valuestring;
 
-            /* register and online device */
+            /* TODO: 解析设备自定义配置信息custom，该字段内容来源在云端控制台的驱动配置项。由于该字段内容
+               为字符串的json内容，所以在去除custom的value值后，需要再次进行json解析操作。
+            */
+
+            /* 注册并上线设备 */
             device_cb.get_properties_cb            = get_properties_callback_cb;
             device_cb.set_properties_cb            = set_properties_callback_cb;
             device_cb.call_service_cb              = call_service_callback_cb;
@@ -184,12 +187,38 @@ static int get_and_parse_deviceconfig(const char* module_name)
     return LE_SUCCESS;
 }
 
-static void *thread_device_data(void *arg)
+int main(int argc, char** argv)
 {
-    int i = 0;
+    int    ret         = LE_SUCCESS;
+    int    i           = 0;
+    char*  module_name = NULL;
 
-    prctl(PR_SET_NAME, "demo_led_data");
+    log_init(LED_TAG_NAME, LOG_STDOUT, LOG_LEVEL_DEBUG, LOG_MOD_BRIEF);
 
+    log_i(LED_TAG_NAME, "demo startup\r\n");
+
+    /* 初始驱动 */
+    module_name = leda_get_module_name();
+    if (NULL == module_name)
+    {
+        log_e(LED_TAG_NAME, "the driver no deploy or deploy failed\r\n");
+        return LE_ERROR_UNKNOWN;
+    }
+
+    if (LE_SUCCESS != (ret = leda_init(module_name, 5)))
+    {
+        log_e(LED_TAG_NAME, "leda_init failed\r\n");
+        return ret;
+    }
+
+    /* 解析配置 */
+    if (LE_SUCCESS != (ret = get_and_parse_deviceconfig(module_name)))
+    {
+        log_e(LED_TAG_NAME, "parse device config failed\r\n");
+        return ret;
+    }
+
+    /* 对已上线设备每隔5秒钟上报一次温度数据和事件 */
     while (1)
     {
         for (i = 0; i < g_dev_handle_count; i++)
@@ -220,54 +249,7 @@ static void *thread_device_data(void *arg)
         sleep(5);
     }
 
-    pthread_exit(NULL);
-
-    return NULL;
-}
-
-int main(int argc, char** argv)
-{
-    int         ret         = LE_SUCCESS;
-    char*       module_name = NULL;
-    pthread_t   thread_id;
-
-    log_init(LED_TAG_NAME, LOG_STDOUT, LOG_LEVEL_DEBUG, LOG_MOD_BRIEF);
-
-    log_i(LED_TAG_NAME, "demo startup\r\n");
-
-    /* init driver */
-    module_name = leda_get_module_name();
-    if (NULL == module_name)
-    {
-        log_e(LED_TAG_NAME, "the driver no deploy or deploy failed\r\n");
-        return LE_ERROR_UNKNOWN;
-    }
-
-    if (LE_SUCCESS != (ret = leda_init(module_name, 5)))
-    {
-        log_e(LED_TAG_NAME, "leda_init failed\r\n");
-        return ret;
-    }
-
-    if (LE_SUCCESS != (ret = get_and_parse_deviceconfig(module_name)))
-    {
-        log_e(LED_TAG_NAME, "parse device config failed\r\n");
-        return ret;
-    }
-
-    if (0 != pthread_create(&thread_id, NULL, thread_device_data, NULL))
-    {
-        log_e(LED_TAG_NAME, "create thread failed\r\n");
-        return LE_ERROR_UNKNOWN;
-    }
-
-    prctl(PR_SET_NAME, "demo_led_main");
-    while (1)
-    {
-        sleep(5);
-    }
-
-    /* exit driver */
+    /* 退出驱动 */
     leda_exit();
 
     log_i(LED_TAG_NAME, "demo exit\r\n");

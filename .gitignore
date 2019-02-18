@@ -15,8 +15,6 @@
 build/
 deps/cJSON-master/*
 deps/dbus-1.10.18/*
-deps/libwebsockets/*
-deps/ssl/*
 deps/libexpat/*
 
 # Binary

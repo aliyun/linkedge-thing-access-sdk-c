@@ -6,9 +6,6 @@ INCLUDE      = -I./ $(INCLUDE_PATH)/ $(INCLUDE_PATH)/cjson $(INCLUDE_PATH)/dbus-
 
 LIB_PATH = -L$(PWD)/build/lib
 LIB 	 =  -lleda_sdk_c  \
-			-lssl		  \
-	  		-lwebsockets  \
-	  		-lcrypto	  \
 			-lcjson       \
 			-lpthread     \
 			-ldbus-1

@@ -25,7 +25,6 @@
      gcc            | 4.8.5+  |
      make           | 3.82+   |
      ld             | 2.17+   |
-     autoconf       | 2.69+   |
      cmake          | 3.11.1+ |
 
 ### 依赖组件
@@ -36,8 +35,6 @@
      cjson          | 1.5.5+  |
      expat          | 2.2.0+  |
      dbus           | 1.2.1+  |
-     ssl            | 1.0.2p  |
-     libwebsockets  | 2.4.0+  |
 
 ### 编译步骤
     $ git clone git@github.com:aliyun/link-iot-edge-access-sdk-c.git

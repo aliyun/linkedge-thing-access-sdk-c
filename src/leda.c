@@ -30,7 +30,6 @@
 
 #include "log.h"
 #include "le_error.h"
-#include "runtime.h"
 #include "leda.h"
 #include "linux-list.h"
 #include "leda_base.h"
@@ -926,7 +925,7 @@ device_handle_t leda_register_and_online_by_local_name(const char *product_key, 
  *
  * dev_handle:  设备在linkedge本地唯一标识.
  *
- * 阻塞接口, 成功返回LEDA_SUCCESS,  失败返回错误码.
+ * 阻塞接口, 成功返回LE_SUCCESS,  失败返回错误码.
  *
  */
 int leda_unregister(device_handle_t dev_handle)
@@ -994,7 +993,7 @@ int leda_unregister(device_handle_t dev_handle)
  *
  * module_name 驱动名称.
  *
- * 阻塞接口, 成功返回LEDA_SUCCESS, 失败返回错误错误码.
+ * 阻塞接口, 成功返回LE_SUCCESS, 失败返回错误错误码.
  */
 static int _leda_unregister_driver(const char *module_name)
 {
@@ -1053,7 +1052,7 @@ static int _leda_unregister_driver(const char *module_name)
  *
  * module_name 驱动名称.
  *
- * 阻塞接口, 成功返回LEDA_SUCCESS, 失败返回错误错误码.
+ * 阻塞接口, 成功返回LE_SUCCESS, 失败返回错误错误码.
  */
 static int _leda_register_driver(const char *module_name)
 {
@@ -1124,16 +1123,6 @@ int leda_init(const char *module_name, int worker_thread_nums)
     DBusError           dbus_error;
     cJSON_Hooks         json_hooks;
     leda_connect_info_t *connect_info = NULL;
-
-    if (NULL != getenv("FUNCTION_NAME"))
-    {
-        log_i(LEDA_TAG_NAME, "leda init with fc\r\n");
-        if (0 != runtime_init(NULL))
-        {
-            log_e(LEDA_TAG_NAME, "leda init failed\r\n");
-            return LE_ERROR_UNKNOWN;
-        }
-    }
 
     if ((NULL == module_name) 
         || (LE_SUCCESS != leda_string_validate_utf8(module_name, strlen(module_name))))
@@ -1248,11 +1237,6 @@ void leda_exit(void)
     {
         free(g_module_name);
         g_module_name = NULL;
-    }
-
-    if (NULL != getenv("FUNCTION_NAME"))
-    {
-        runtime_exit();
     }
 
     log_i(LEDA_TAG_NAME, "driver initiative exit, bye bye!!!\r\n");
@@ -1603,9 +1587,9 @@ int leda_register_config_changed_callback(const char *module_name, config_change
  * thread_name: 需要保活的线程名称.
  * count_down_seconds : 倒计时时间, -1表示停止保活, 单位:秒.
  *
- * 阻塞接口, 成功返回LEDA_SUCCESS, 失败返回错误码.
+ * 阻塞接口, 成功返回LE_SUCCESS, 失败返回错误码.
  */
-int leda_feed_watchdog(const char *module_name, const char *thread_name, int count_down)
+int leda_feed_watchdog(const char *module_name, const char *thread_name, int count_down_seconds)
 {
     DBusMessage *signal_msg = NULL;
     char        *path       = NULL; 
@@ -1650,7 +1634,7 @@ int leda_feed_watchdog(const char *module_name, const char *thread_name, int cou
         return LE_ERROR_UNKNOWN;
     }
 
-    dbus_message_append_args(signal_msg, DBUS_TYPE_STRING, &interface, DBUS_TYPE_STRING, &thread_name, DBUS_TYPE_INT32, &count_down, DBUS_TYPE_INVALID);
+    dbus_message_append_args(signal_msg, DBUS_TYPE_STRING, &interface, DBUS_TYPE_STRING, &thread_name, DBUS_TYPE_INT32, &count_down_seconds, DBUS_TYPE_INVALID);
     dbus_message_set_destination(signal_msg, DMP_WATCHDOG_WELL_KNOWN_NAME);
     if (TRUE != dbus_connection_send(g_connection, signal_msg, NULL))
     {
