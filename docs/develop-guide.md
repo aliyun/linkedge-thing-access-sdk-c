@@ -46,4 +46,4 @@
     $ make && make install      #生成leda_sdk_c库和demo
 
 ## 驱动开发流程
-驱动开发流程见[驱动开发指南](https://help.aliyun.com/document_detail/96636.html?spm=a2c4g.11186623.6.587.10c529aeBhDbIT)
+驱动开发流程见[驱动开发指南](https://help.aliyun.com/document_detail/104444.html?spm=a2c4g.11186623.6.562.7aaa8f08JPJf2d)
