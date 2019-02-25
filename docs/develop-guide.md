@@ -52,12 +52,12 @@ dbus           | 1.2.1+  |
 如果需要交叉编译设备接入SDK，需要将Makefile脚本中注释部分打开，选择填写编译目标结构和编译工具链信息：
 
 ``` makefile
-     # 编译目标Arch选择
+     # 编译目标Arch选择
      export HOST="x86_64"
      export ARCH="arm-linux-gnueabihf"
      export TARGET=${ARCH}
 
-      # 编译工具链选择
+      # 编译工具链选择
      export CROSS_COMPILE="arm-linux-gnueabihf-"
      export CC="${CROSS_COMPILE}gcc"
      export CXX="${CROSS_COMPILE}g++"
