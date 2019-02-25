@@ -1,3 +1,15 @@
+# inject compile tool-chain when cross complile sdk
+#export HOST="x86_64"
+#export ARCH="arm-linux-gnueabihf"
+#export TARGET=${ARCH}
+#export CROSS_COMPILE="arm-linux-gnueabihf-"
+#export CC="${CROSS_COMPILE}gcc"
+#export CXX="${CROSS_COMPILE}g++"
+#export LD="${CROSS_COMPILE}ld"
+#export AR="${CROSS_COMPILE}ar"
+#export RANLIB="${CROSS_COMPILE}ranlib"
+#export STRIP="${CROSS_COMPILE}strip"
+
 # default compile output
 all :
 	$(MAKE) leda_sdk_c
@@ -22,7 +34,7 @@ install:
 	$(MAKE) -C demo -f demo.mk install
 
 # delete compile resource
-remove:
+distclean: clean
 	-$(RM) -r ./build
 	-$(RM) -r ./deps/cJSON-master/
 	-$(RM) -r ./deps/dbus-1.10.18/

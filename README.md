@@ -8,13 +8,15 @@
 接入SDK编译条件和demo编译演示准备见[编译演示准备](docs/develop-guide.md)
 
 ### demo编译
-    $ git clone git@github.com:aliyun/link-iot-edge-access-sdk-c.git
+``` sh
+    $git clone git@github.com:aliyun/link-iot-edge-access-sdk-c.git
     
-    $ cd link-iot-edge-access-sdk-c
+    $cd link-iot-edge-access-sdk-c
 
-    $ make prepare              #预编译生成外部依赖库
+    $make prepare              #预编译生成外部依赖库
 
-    $ make && make install      #生成leda_sdk_c和demo
+    $make && make install      #生成leda_sdk_c和demo
+```
 
 ### demo演示
 1. 进入工程build/bin/demo/led目录。

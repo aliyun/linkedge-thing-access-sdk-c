@@ -1,7 +1,6 @@
 # 解压libexpat2.2.0组件源码并完成编译和安装
 
 LIB_TAR    = libexpat
-HOST_OS    = x86_64-generic-linux-gnu
 OUTPUT_DIR = $(PWD)/build
 
 all :
@@ -12,7 +11,7 @@ all :
 		&& ./configure \
 			--prefix=$(OUTPUT_DIR) \
 			--enable-shared \
-			--host=${HOST_OS} \
+			--host=${ARCH} \
 		&& make buildlib \
 		&& make installlib
 
