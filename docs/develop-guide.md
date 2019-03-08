@@ -26,6 +26,8 @@ gcc            | 4.8.5+  |
 make           | 3.82+   |
 ld             | 2.17+   |
 cmake          | 3.11.1+ |
+autoconf       | 2.69+   |
+libtool        | 2.4.6+  |
 zip            | 3.0+    |
 
 ### 依赖组件
@@ -58,13 +60,14 @@ dbus           | 1.2.1+  |
      export TARGET=${ARCH}
 
       # 编译工具链选择
-     export CROSS_COMPILE="arm-linux-gnueabihf-"
-     export CC="${CROSS_COMPILE}gcc"
-     export CXX="${CROSS_COMPILE}g++"
-     export LD="${CROSS_COMPILE}ld"
-     export AR="${CROSS_COMPILE}ar"
-     export RANLIB="${CROSS_COMPILE}ranlib"
-     export STRIP="${CROSS_COMPILE}strip"
+     export CROSS_ROOT= #the root dir of cross compile tool chain 
+     export CROSS_COMPILE=${CROSS_ROOT}/bin/arm-linux-gnueabihf-
+     export CC=${CROSS_COMPILE}gcc
+     export CXX=${CROSS_COMPILE}g++
+     export LD=${CROSS_COMPILE}ld
+     export AR=${CROSS_COMPILE}ar
+     export RANLIB=${CROSS_COMPILE}ranlib
+     export STRIP=${CROSS_COMPILE}strip
 ```
 
 ## 驱动开发流程
