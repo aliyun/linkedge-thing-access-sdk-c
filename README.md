@@ -9,9 +9,9 @@
 
 ### demo编译
 ``` sh
-    $git clone git@github.com:aliyun/link-iot-edge-access-sdk-c.git
+    $git clone git@github.com:aliyun/linkedge-thing-access-sdk-c.git
     
-    $cd link-iot-edge-access-sdk-c
+    $cd linkedge-thing-access-sdk-c
 
     $make prepare              #预编译生成外部依赖库
 
