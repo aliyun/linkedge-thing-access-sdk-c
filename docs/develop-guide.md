@@ -41,9 +41,9 @@ dbus           | 1.2.1+  |
 
 ### 编译步骤
 ``` sh
-    $git clone git@github.com:aliyun/link-iot-edge-access-sdk-c.git
+    $git clone git@github.com:aliyun/linkedge-thing-access-sdk-c.git
     
-    $cd link-iot-edge-access-sdk-c
+    $cd linkedge-thing-access-sdk-c
     
     $make prepare              #生成leda_sdk_c需要的依赖库
 
