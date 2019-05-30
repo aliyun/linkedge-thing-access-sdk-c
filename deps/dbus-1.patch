@@ -1,0 +1,78 @@
+diff -uprN dbus-1.10.18/dbus/dbus-marshal-validate.c dbus-1.10.18.new/dbus/dbus-marshal-validate.c
+--- dbus-1.10.18/dbus/dbus-marshal-validate.c	2015-11-24 05:53:42.000000000 +0800
++++ dbus-1.10.18.new/dbus/dbus-marshal-validate.c	2018-10-30 14:55:07.054117284 +0800
+@@ -750,20 +750,32 @@ _dbus_validate_body_with_reason (const D
+  * Determine wether the given character is valid as the first character
+  * in a name.
+  */
++/*#define VALID_INITIAL_NAME_CHARACTER(c)         \
++ * ( ((c) >= 'A' && (c) <= 'Z') ||               \
++ *   ((c) >= 'a' && (c) <= 'z') ||               \
++ *   ((c) == '_') )
++*/
+ #define VALID_INITIAL_NAME_CHARACTER(c)         \
+   ( ((c) >= 'A' && (c) <= 'Z') ||               \
+     ((c) >= 'a' && (c) <= 'z') ||               \
+-    ((c) == '_') )
++    ((c)>='0' && (c) <= '9')   ||               \
++    ((c) == '_') || ((c) == '-') || ((c) == '@')|| ((c) == '.')|| ((c) == ':')|| ((c) == ','))
+ 
+ /**
+  * Determine wether the given character is valid as a second or later
+  * character in a name
+  */
++/*#define VALID_NAME_CHARACTER(c)                 \
++ * ( ((c) >= '0' && (c) <= '9') ||               \
++ *   ((c) >= 'A' && (c) <= 'Z') ||               \
++ *   ((c) >= 'a' && (c) <= 'z') ||               \
++ *   ((c) == '_') )
++*/
+ #define VALID_NAME_CHARACTER(c)                 \
+   ( ((c) >= '0' && (c) <= '9') ||               \
+     ((c) >= 'A' && (c) <= 'Z') ||               \
+     ((c) >= 'a' && (c) <= 'z') ||               \
+-    ((c) == '_') )
++    ((c) == '_') || ((c) == '-') || ((c) == '@')|| ((c) == '.')|| ((c) == ':')|| ((c) == ','))
+ 
+ /**
+  * Checks that the given range of the string is a valid object path
+@@ -1067,20 +1079,36 @@ _dbus_validate_error_name (const DBusStr
+  * Determine wether the given character is valid as the first character
+  * in a bus name.
+  */
+-#define VALID_INITIAL_BUS_NAME_CHARACTER(c)         \
++/*#define VALID_INITIAL_BUS_NAME_CHARACTER(c)         \
++ * ( ((c) >= 'A' && (c) <= 'Z') ||               \
++ *   ((c) >= 'a' && (c) <= 'z') ||               \
++ *   ((c) == '_') || ((c) == '-'))
++*/
++#define VALID_INITIAL_BUS_NAME_CHARACTER(c)     \
+   ( ((c) >= 'A' && (c) <= 'Z') ||               \
+     ((c) >= 'a' && (c) <= 'z') ||               \
+-    ((c) == '_') || ((c) == '-'))
++    ((c) >= '0' && (c) <= '9') ||               \
++    ((c) == '_') || ((c) == '-') || ((c) == '@')|| ((c) == '.')|| ((c) == ':')|| ((c) == ','))
++
++
+ 
+ /**
+  * Determine wether the given character is valid as a second or later
+  * character in a bus name
+  */
++/*#define VALID_BUS_NAME_CHARACTER(c)                 \
++ * ( ((c) >= '0' && (c) <= '9') ||               \
++ *   ((c) >= 'A' && (c) <= 'Z') ||               \
++ *   ((c) >= 'a' && (c) <= 'z') ||               \
++ *   ((c) == '_') || ((c) == '-'))
++*/
+ #define VALID_BUS_NAME_CHARACTER(c)                 \
+   ( ((c) >= '0' && (c) <= '9') ||               \
+     ((c) >= 'A' && (c) <= 'Z') ||               \
+     ((c) >= 'a' && (c) <= 'z') ||               \
+-    ((c) == '_') || ((c) == '-'))
++    ((c) == '_') || ((c) == '-') || ((c) == '@')|| ((c) == '.')|| ((c) == ':')|| ((c) == ','))
++
++
+ 
+ static dbus_bool_t
+ _dbus_validate_bus_name_full (const DBusString  *str,

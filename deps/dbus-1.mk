@@ -5,6 +5,10 @@ OUTPUT_DIR = $(PWD)/build
 
 all :
 	tar zxvf ./$(LIB_TAR).tar.gz
+
+	cp -f ./dbus-1.patch $(LIB_TAR)
+	cd $(LIB_TAR) && patch -p1 < ./dbus-1.patch && cd -
+
 	cd $(LIB_TAR) && CFLAGS=-I${OUTPUT_DIR}/include LDFLAGS=-L${OUTPUT_DIR}/lib ./configure prefix=$(OUTPUT_DIR) \
 			--host=${ARCH} \
 			--enable-abstract-sockets \
