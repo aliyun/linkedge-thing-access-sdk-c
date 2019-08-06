@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 Alibaba Group. All rights reserved.
+ * Copyright (c) 2014-2019 Alibaba Group. All rights reserved.
  * License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -25,13 +25,13 @@
 
 #include "log.h"
 
-#define MAX_MSG_LEN     512*2
+#define MAX_MSG_LEN             512*2
 
 #if defined(__cplusplus) /* If this is a C++ compiler, use C linkage */
 extern "C" {
 #endif
 
-#define PRINT_WITH_TIMESTAMP 0
+#define PRINT_WITH_TIMESTAMP    0
 
 #if PRINT_WITH_TIMESTAMP
 //date [module] level <tag> file-func:line content
@@ -67,19 +67,21 @@ static char *get_timestamp(char *buf, int len, time_t cur_time)
 }
 #endif
 
-#define color_len_fin strlen(COL_DEF)
+#define color_len_fin   strlen(COL_DEF)
 #define color_len_start strlen(COL_RED)
 void log_print(unsigned char lvl, const char *color, const char *t, const char *f, const char *func, unsigned int l, const char *fmt, ...)
 {
-    if(lvl < g_log_lvl)
+    if (lvl < g_log_lvl)
+    {
         return;
+    }
 
     va_list ap;
     va_start(ap, fmt);
-    char *buf = NULL;
 
+    char *buf = NULL;
     char *tmp = NULL;
-    int len = 0;
+    int  len  = 0;
 
 #if PRINT_WITH_TIMESTAMP
     char buf_date[20] = {0};
@@ -91,20 +93,23 @@ void log_print(unsigned char lvl, const char *color, const char *t, const char *
     func = !func ? "\b" : func;
 
     tmp = strrchr(f, '/');
-    if(tmp)
+    if (tmp)
         f = tmp + 1;
 
     buf = malloc(MAX_MSG_LEN + 1);
-    if(NULL == buf){
-        printf("failed to malloc memory .\n");
+    if (NULL == buf)
+    {
+        printf("no memory can allocate.\n");
         return;
     }
 
     memset(buf, 0, MAX_MSG_LEN + 1);
 
     //add color support
-    if (color) 
+    if (color)
+    {
         strcat(buf, color);
+    }
 
 #if PRINT_WITH_TIMESTAMP
     snprintf(buf + strlen(buf), MAX_MSG_LEN - strlen(buf), LOG_FMT_VRB,
@@ -118,36 +123,55 @@ void log_print(unsigned char lvl, const char *color, const char *t, const char *
     len = MAX_MSG_LEN - strlen(buf) - color_len_fin - 5;
     len = len <= 0 ? 0 : len;
     tmp = buf + strlen(buf);
-    if (vsnprintf(tmp, len, fmt, ap) > len) 
+    if (vsnprintf(tmp, len, fmt, ap) > len)
+    {
         strcat(buf, "...\n");
+    }
 
-    if (color) 
+    if (color)
+    {
         strcat(buf, COL_DEF);
+    }
 
     fprintf(stdout, "%s", buf);
-    if (color) 
+    if (color)
+    {
         buf[strlen(buf) - color_len_fin] = '\0';
+    }
 
     va_end(ap);
 
     free(buf);
+
+    return;
 }
 
 void log_set_level(LOG_LEVEL lvl)
 {
-    if(lvl < LOG_LEVEL_DEBUG || lvl > LOG_LEVEL_FATAL)
-        g_log_lvl = LOG_LEVEL_ERR; 
-    else 
+    if (lvl < LOG_LEVEL_DEBUG || lvl > LOG_LEVEL_FATAL)
+    {
+        g_log_lvl = LOG_LEVEL_ERR;
+    }
+    else
+    {
         g_log_lvl = lvl;
-    printf("set log level :  %d\n", lvl);
+    }
+
+    printf("set log level: %d\n", lvl);
+
+    return;
 }
 
 int log_init(const char *name, LOG_STORE_TYPE type, LOG_LEVEL lvl, LOG_MODE mode)
 { 
-    if(lvl < LOG_LEVEL_DEBUG || lvl > LOG_LEVEL_FATAL)
-        g_log_lvl = LOG_LEVEL_ERR; 
-    else 
+    if (lvl < LOG_LEVEL_DEBUG || lvl > LOG_LEVEL_FATAL)
+    {
+        g_log_lvl = LOG_LEVEL_ERR;
+    }
+    else
+    {
         g_log_lvl = lvl;
+    }
 
     if (setvbuf(stdout, NULL, _IOLBF, 0))
     {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 Alibaba Group. All rights reserved.
+ * Copyright (c) 2014-2019 Alibaba Group. All rights reserved.
  * License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -25,35 +25,31 @@ extern "C"
 #endif
 
 /*
-*线程池里所有运行和等待的任务都是一个CThread_worker
-*由于所有任务都在链表里，所以是一个链表结构
+* 任务结构
+* 注: 线程池里所有运行和等待的任务都是一个CThread_worker. 由于所有任务都在链表里, 所以是一个链表结构
 */
 typedef struct worker
 {
-    void *(*process) (void *arg);
-    void *arg;/*回调函数的参数*/
-    struct worker *next;
+    void            *(*process) (void *arg);/* 回调函数 */
+    void            *arg;                   /* 回调函数的参数 */
+    struct worker   *next;
 } CThread_worker;
 
-/*线程池结构*/
+/* 线程池结构 */
 typedef struct
 {
     pthread_mutex_t queue_lock;
-    pthread_cond_t queue_ready;
-    /*链表结构，线程池中所有等待任务*/
-    CThread_worker *queue_head;
-    /*是否销毁线程池*/
-    int shutdown;
-    pthread_t *threadid;
-    /*线程池中允许的活动线程数目*/
-    int max_thread_num;
-    /*当前等待队列的任务数目*/
-    int cur_queue_size;
+    pthread_cond_t  queue_ready;
+    CThread_worker  *queue_head;            /* 链表结构, 线程池中所有等待任务 */
+    int             shutdown;               /* 是否销毁线程池 */
+    pthread_t       *threadid;
+    int             max_thread_num;         /* 线程池中允许的活动线程数目 */
+    int             cur_queue_size;         /* 当前等待队列的任务数目 */
 } CThread_pool;
 
-void leda_pool_init (int max_thread_num);
-int leda_pool_add_worker (void *(*process) (void *arg), void *arg);
-int leda_pool_destroy(void);
+void leda_pool_init(int max_thread_num);
+int  leda_pool_add_worker(void *(*process)(void *arg), void *arg);
+int  leda_pool_destroy(void);
 
 #if defined(__cplusplus) /* If this is a C++ compiler, use C linkage */
 }

@@ -18,6 +18,6 @@ deps/dbus-1.10.18/*
 deps/libexpat/*
 
 # Binary
-demo/led/demo_led.zip
+demo/led/led_driver.zip
 demo/led/main
 demo/led/lib/

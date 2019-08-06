@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 Alibaba Group. All rights reserved.
+ * Copyright (c) 2014-2019 Alibaba Group. All rights reserved.
  * License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -36,6 +36,8 @@ extern "C"
 {
 #endif
 
+LIST_HEAD(leda_tsl_head);
+
 static int _leda_get_itemtype_from_tsl_serviecs(const char* product_key, const char* service_name, const char* obj_name)
 {
     int     ret             = LEDA_TYPE_BUTT;
@@ -49,21 +51,53 @@ static int _leda_get_itemtype_from_tsl_serviecs(const char* product_key, const c
     int     tsl_size        = 0;
     char*   tsl             = NULL;
 
-    tsl_size = leda_get_tsl_size(product_key);
-    if (tsl_size <=0)
+    leda_tsl_t *tsl_node    = NULL;
+    leda_tsl_t *pos         = NULL;
+    leda_tsl_t *next        = NULL;
+
+    list_for_each_entry_safe(pos, next, &leda_tsl_head, list_node)
     {
-        goto END;
+        if (!strcmp(pos->product_key, product_key))
+        {
+            tsl = pos->tsl;
+        }
     }
 
-    tsl = (char*)malloc(tsl_size);
     if (NULL == tsl)
     {
-        goto END;
-    }
+        tsl_size = leda_get_tsl_size(product_key);
+        if (tsl_size <=0)
+        {
+            goto END;
+        }
 
-    if (LE_SUCCESS != leda_get_tsl(product_key, tsl, tsl_size))
-    {
-        goto END;
+        tsl = (char*)malloc(tsl_size);
+        if (NULL == tsl)
+        {
+            goto END;
+        }
+
+        if (LE_SUCCESS != leda_get_tsl(product_key, tsl, tsl_size))
+        {
+            free(tsl);
+            goto END;
+        }
+
+        tsl_node = (leda_tsl_t*)malloc(sizeof(leda_tsl_t));
+        memset(tsl_node, 0, sizeof(leda_tsl_t));
+
+        tsl_node->product_key = (char*)malloc(strlen(product_key) + 1);
+        if (NULL == tsl_node->product_key)
+        {
+            free(tsl);
+            free(tsl_node);
+            goto END;
+        }
+
+        memcpy(tsl_node->product_key, product_key, (strlen(product_key) + 1));
+        tsl_node->tsl = tsl;
+
+        list_add(&tsl_node->list_node, &leda_tsl_head);
     }
 
     object = cJSON_Parse(tsl);
@@ -137,81 +171,79 @@ END:
         cJSON_Delete(object);
     }
 
-    if (NULL != tsl)
-    {
-        free(tsl);
-    }
-
     return ret;
 }
 
-#define UNICODE_VALID(Char)                   \
-    ((Char) < 0x110000 &&                     \
-     (((Char) & 0xFFFFF800) != 0xD800))
+#define UNICODE_VALID(Char)                         \
+    ((Char) < 0x110000 &&                           \
+    (((Char) & 0xFFFFF800) != 0xD800))
+
 #define UTF8_GET(Result, Chars, Count, Mask, Len)   \
     (Result) = (Chars)[0] & (Mask);                 \
     for((Count) = 1; (Count) < (Len); ++(Count))    \
-    {									            \
-        if (((Chars)[(Count)] & 0xc0) != 0x80)     \
-	    {                                           \
-	        (Result) = -1;                          \
-	        break;							        \
-	    }                                           \
+    {                                               \
+        if (((Chars)[(Count)] & 0xc0) != 0x80)      \
+        {                                           \
+           (Result) = -1;                           \
+            break;                                  \
+        }                                           \
         (Result) <<= 6;                             \
         (Result) |= ((Chars)[(Count)] & 0x3f);      \
     }
-#define UTF8_COMPUTE(Char, Mask, Len)         \
-    if (Char < 128)                           \
-    {                                         \
-      Len = 1;                                \
-      Mask = 0x7f;                            \
-    }                                         \
-    else if ((Char & 0xe0) == 0xc0)           \
-    {                                         \
-      Len = 2;                                \
-      Mask = 0x1f;                            \
-    }                                         \
-    else if ((Char & 0xf0) == 0xe0)           \
-    {                                         \
-      Len = 3;                                \
-      Mask = 0x0f;                            \
-    }          	                              \
-    else if ((Char & 0xf8) == 0xf0)           \
-    {									      \
-      Len = 4;                                \
-      Mask = 0x07;                            \
-    }									      \
-    else if ((Char & 0xfc) == 0xf8)           \
-    {									      \
-      Len = 5;                                \
-      Mask = 0x03;                            \
-    }									      \
-    else if ((Char & 0xfe) == 0xfc)           \
-    {									      \
-      Len = 6;                                \
-      Mask = 0x01;                            \
-    }									      \
-    else                                      \
-    {                                         \
-      Len = 0;                                \
-      Mask = 0;                               \
+
+#define UTF8_COMPUTE(Char, Mask, Len)               \
+    if (Char < 128)                                 \
+    {                                               \
+        Len = 1;                                    \
+        Mask = 0x7f;                                \
+    }                                               \
+    else if ((Char & 0xe0) == 0xc0)                 \
+    {                                               \
+        Len = 2;                                    \
+        Mask = 0x1f;                                \
+    }                                               \
+    else if ((Char & 0xf0) == 0xe0)                 \
+    {                                               \
+        Len = 3;                                    \
+        Mask = 0x0f;                                \
+    }          	                                    \
+    else if ((Char & 0xf8) == 0xf0)                 \
+    {                                               \
+        Len = 4;                                    \
+        Mask = 0x07;                                \
+    }                                               \
+    else if ((Char & 0xfc) == 0xf8)                 \
+    {                                               \
+        Len = 5;                                    \
+        Mask = 0x03;                                \
+    }                                               \
+    else if ((Char & 0xfe) == 0xfc)                 \
+    {                                               \
+        Len = 6;                                    \
+        Mask = 0x01;                                \
+    }                                               \
+    else                                            \
+    {                                               \
+        Len = 0;                                    \
+        Mask = 0;                                   \
     }
-#define UTF8_LENGTH(Char)              \
-  ((Char) < 0x80 ? 1 :                 \
-   ((Char) < 0x800 ? 2 :               \
-    ((Char) < 0x10000 ? 3 :            \
-     ((Char) < 0x200000 ? 4 :          \
-      ((Char) < 0x4000000 ? 5 : 6)))))
+
+#define UTF8_LENGTH(Char)                           \
+    ((Char) < 0x80 ? 1 :                            \
+    ((Char) < 0x800 ? 2 :                           \
+    ((Char) < 0x10000 ? 3 :                         \
+    ((Char) < 0x200000 ? 4 :                        \
+    ((Char) < 0x4000000 ? 5 : 6)))))
 
 int leda_string_validate_utf8(const char *str, int len)
 {
-    unsigned char *p;
-    unsigned char *end;
+    unsigned char *p    = NULL;
+    unsigned char *end  = NULL;
 
     p = (unsigned char*)str;
     end = p + len;
 
-    while(p < end)
+    while (p < end)
     {
         int i, mask, char_len;
         uint32_t result;
@@ -221,44 +253,44 @@ int leda_string_validate_utf8(const char *str, int len)
         {
             break;
         }
-        if(*p < 128)
+
+        if (*p < 128)
         {
             ++p;
             continue;
         }
 
         UTF8_COMPUTE (*p, mask, char_len);
-
-        if(char_len == 0)  /* ASCII: char_len == 1 */
+        if (char_len == 0)  /* ASCII: char_len == 1 */
         {
             break;
         }
 
-        if((end - p) < char_len)
+        if ((end - p) < char_len)
         {
             break;
         }
         UTF8_GET (result, p, i, mask, char_len);
 
-        if(UTF8_LENGTH (result) != char_len) /* ASCII: UTF8_LENGTH == 1 */
+        if (UTF8_LENGTH (result) != char_len) /* ASCII: UTF8_LENGTH == 1 */
         {
             break;
         }
-        if(!UNICODE_VALID (result)) /* ASCII: always valid */
+
+        if (!UNICODE_VALID (result)) /* ASCII: always valid */
         {
             break;
         }
 
         p += char_len;
     }
-    if(p != end)
+
+    if (p != end)
     {
         return LE_ERROR_INVAILD_PARAM;
     }
-    else
-    {
-        return LE_SUCCESS;
-    }
+
+    return LE_SUCCESS;
 }
 
 void leda_wkn_to_path(const char *wkn, char *path)
@@ -267,9 +299,9 @@ void leda_wkn_to_path(const char *wkn, char *path)
     int len = strlen(wkn);
 
     *path = '/';
-    for(i=0; i<len; i++)
+    for (i=0; i<len; i++)
     {
-        if('.' == *(wkn+i))
+        if ('.' == *(wkn+i))
         {
             *(path+i+1) = '/';
         }
@@ -285,12 +317,12 @@ int leda_interface_is_vaild(const char *bus_if)
 {
     char *leda_wkn = LEDA_DEVICE_WKN;
 
-    if(NULL == bus_if)
+    if (NULL == bus_if)
     {
         return LE_ERROR_INVAILD_PARAM;
     }
     
-    if(strncmp(leda_wkn, bus_if, strlen(leda_wkn)))
+    if (strncmp(leda_wkn, bus_if, strlen(leda_wkn)))
     {
         return LE_ERROR_INVAILD_PARAM;
     }
@@ -302,12 +334,12 @@ int leda_path_is_vaild(const char *path)
 {
     char *leda_path = LEDA_PATH_NAME;
 
-    if(NULL == path)
+    if (NULL == path)
     {
         return LE_ERROR_INVAILD_PARAM;
     }
     
-    if(strncmp(leda_path, path, strlen(leda_path)))
+    if (strncmp(leda_path, path, strlen(leda_path)))
     {
         return LE_ERROR_INVAILD_PARAM;
     }
@@ -317,11 +349,12 @@ int leda_path_is_vaild(const char *path)
 
 char *leda_retmsg_create(int ret, char *params)
 {
-    cJSON *object, *item;
-    char *info;
+    cJSON   *object = NULL;
+    cJSON   *item   = NULL;
+    char    *info   = NULL;
 
     object = cJSON_CreateObject();
-    if(NULL == object)
+    if (NULL == object)
     {
         return NULL;
     }
@@ -450,16 +483,15 @@ char *leda_retmsg_create(int ret, char *params)
         }
     }
 
-    if((NULL != params) && (LE_SUCCESS == leda_string_validate_utf8(params, strlen(params))))
+    if ((NULL != params) && (LE_SUCCESS == leda_string_validate_utf8(params, strlen(params))))
     {
         item = cJSON_Parse(params);
-        if(NULL != item)
+        if (NULL != item)
         {
             cJSON_AddItemToObject(object, "params", item);
         }
         else
         {
-            log_e(LEDA_TAG_NAME, "the downstream data %s is not object\r\n", params);
             cJSON_AddItemToObject(object, "params", cJSON_CreateObject());
         }
     }
@@ -468,8 +500,9 @@ char *leda_retmsg_create(int ret, char *params)
         cJSON_AddItemToObject(object, "params", cJSON_CreateObject());
     }
 
-    info = cJSON_Print(object);
+    info = cJSON_PrintUnformatted(object);
     cJSON_Delete(object);
+
     return info;
 }
 
@@ -482,89 +515,96 @@ void leda_retmsg_init(leda_retinfo_t *retinfo)
 
 int leda_retmsg_parse(DBusMessage *reply, const char *method_name, leda_retinfo_t *retinfo)
 {
-    cJSON *root, *item;
-    DBusError dbus_error;
-    char *info = NULL;
-    char *buff = NULL;
-    int code = 0;
+    DBusError   dbus_error;
+    cJSON       *root   = NULL;
+    cJSON       *item   = NULL;
+    char        *info   = NULL;
+    char        *buff   = NULL;
+    int         code    = 0;
     
     dbus_error_init(&dbus_error);
-    if(!strcmp(method_name, DMP_CONFIGMANAGER_METHOD_GET))
+    if (!strcmp(method_name, DMP_CONFIGMANAGER_METHOD_GET))
     {
-        if(!dbus_message_get_args(reply, &dbus_error, DBUS_TYPE_INT32, &code, DBUS_TYPE_STRING, &info, DBUS_TYPE_INVALID))
+        if (!dbus_message_get_args(reply, &dbus_error, DBUS_TYPE_INT32, &code, DBUS_TYPE_STRING, &info, DBUS_TYPE_INVALID))
         {
-            log_e(LEDA_TAG_NAME, "get_args err:%s\n", info);
+            log_w(LEDA_TAG_NAME, "get args failed from dbus_message_get_args: %s\n", info);
             return LE_ERROR_INVAILD_PARAM;
         }
-        retinfo->code = code;
-        retinfo->message = NULL;
-        retinfo->params = (char *)malloc(strlen(info)+1);
-        if(NULL == retinfo->params)
+
+        retinfo->code       = code;
+        retinfo->message    = NULL;
+        retinfo->params     = (char *)malloc(strlen(info)+1);
+        if (NULL == retinfo->params)
         {
-            log_e(LEDA_TAG_NAME, "no memory\r\n");
-            return LE_ERROR_INVAILD_PARAM;
+            log_w(LEDA_TAG_NAME, "no memory can allocate\n");
+            return LE_ERROR_ALLOCATING_MEM;
         }
+
         snprintf(retinfo->params, (strlen(info)+1), "%s", info);
     }
-    else if(!strcmp(method_name, DMP_CONFIGMANAGER_METHOD_SUBSCRIBE))
+    else if (!strcmp(method_name, DMP_CONFIGMANAGER_METHOD_SUBSCRIBE))
     {
-        if(!dbus_message_get_args(reply, &dbus_error, DBUS_TYPE_INT32, &code, DBUS_TYPE_INVALID))
+        if (!dbus_message_get_args(reply, &dbus_error, DBUS_TYPE_INT32, &code, DBUS_TYPE_INVALID))
         {
-            log_e(LEDA_TAG_NAME, "get_args err:%s\r\n", info);
+            log_w(LEDA_TAG_NAME, "get args failed from dbus_message_get_args: %s\n", info);
             return LE_ERROR_INVAILD_PARAM;
         }
-        retinfo->code = code;
-        retinfo->message = NULL;
-        retinfo->params = NULL;        
+
+        retinfo->code       = code;
+        retinfo->message    = NULL;
+        retinfo->params     = NULL;
     }
     else
     {
-        if(!dbus_message_get_args(reply, &dbus_error, DBUS_TYPE_STRING, &info, DBUS_TYPE_INVALID))
+        if (!dbus_message_get_args(reply, &dbus_error, DBUS_TYPE_STRING, &info, DBUS_TYPE_INVALID))
         {
-            log_e(LEDA_TAG_NAME, "get_args err:%s\r\n", info);
+            log_w(LEDA_TAG_NAME, "get args failed from dbus_message_get_args: %s\n", info);
             return LE_ERROR_INVAILD_PARAM;
         }
+    
         root = cJSON_Parse(info);
-        if(NULL == root)
+        if (NULL == root)
         {
-            log_e(LEDA_TAG_NAME, "result err:%s\r\n", info);
+            log_w(LEDA_TAG_NAME, "parse %s to json failed\n", info);
             return LEDA_ERROR_INVALID_JSON;
         }
+    
         item = cJSON_GetObjectItem(root, "code");
-        if(NULL == item)
+        if (NULL == item)
         {
-            log_e(LEDA_TAG_NAME, "result err:%s\r\n", info);
+            log_w(LEDA_TAG_NAME, "%s no code feild\n", info);
             cJSON_Delete(root);
-            return LEDA_ERROR_INVALID_JSON;
+            return LE_ERROR_INVAILD_PARAM;
         }
         retinfo->code = item->valueint;
         
         item = cJSON_GetObjectItem(root, "message");
-        if((NULL == item) || (NULL == item->valuestring))
+        if ((NULL == item) || (NULL == item->valuestring))
         {
-            log_e(LEDA_TAG_NAME, "result err:%s\r\n", info);
+            log_w(LEDA_TAG_NAME, "%s no message feild\n", info);
             cJSON_Delete(root);
-            return LEDA_ERROR_INVALID_JSON;
+            return LE_ERROR_INVAILD_PARAM;
         }
+
         retinfo->message = (char *)malloc(strlen(item->valuestring)+1);
-        if(NULL == retinfo->message)
+        if (NULL == retinfo->message)
         {
-            log_e(LEDA_TAG_NAME, "no memory\r\n");
+            log_w(LEDA_TAG_NAME, "no memory can allocate\n");
             cJSON_Delete(root);
             return LE_ERROR_ALLOCATING_MEM;
         }
         snprintf(retinfo->message, (strlen(item->valuestring)+1), "%s", item->valuestring);
 
         item = cJSON_GetObjectItem(root, "params");
-        if(NULL != item)
+        if (NULL != item)
         {
-            if(cJSON_String == item->type)
+            if (cJSON_String == item->type)
             {
                 buff = item->valuestring;
                 retinfo->params = (char *)malloc(strlen(buff)+1);
-                if(NULL == retinfo->params)
+                if (NULL == retinfo->params)
                 {
-                    log_e(LEDA_TAG_NAME, "no memory\r\n");
+                    log_w(LEDA_TAG_NAME, "no memory can allocate\n");
                     free(retinfo->message);
                     cJSON_Delete(root);
                     return LE_ERROR_ALLOCATING_MEM;
@@ -573,18 +613,19 @@ int leda_retmsg_parse(DBusMessage *reply, const char *method_name, leda_retinfo_
             }
             else
             {
-                buff = cJSON_Print(item);
-                if(NULL == buff)
+                buff = cJSON_PrintUnformatted(item);
+                if (NULL == buff)
                 {
-                    log_e(LEDA_TAG_NAME, "no memory\r\n");
+                    log_w(LEDA_TAG_NAME, "no memory can allocate\n");
                     free(retinfo->message);
                     cJSON_Delete(root);
                     return LE_ERROR_ALLOCATING_MEM;
                 }
+            
                 retinfo->params = (char *)malloc(strlen(buff)+1);
-                if(NULL == retinfo->params)
+                if (NULL == retinfo->params)
                 {
-                    log_e(LEDA_TAG_NAME, "no memory\r\n");
+                    log_w(LEDA_TAG_NAME, "no memory can allocate\n");
                     free(retinfo->message);
                     cJSON_free(buff);
                     cJSON_Delete(root);
@@ -598,6 +639,7 @@ int leda_retmsg_parse(DBusMessage *reply, const char *method_name, leda_retinfo_
         {
             retinfo->params = NULL;
         }
+
         cJSON_Delete(root);
     }
     dbus_error_free(&dbus_error);
@@ -607,7 +649,7 @@ int leda_retmsg_parse(DBusMessage *reply, const char *method_name, leda_retinfo_
 
 void leda_retmsg_free(char *msg)
 {
-    if(msg)
+    if (msg)
     {
         cJSON_free(msg);
     }
@@ -615,11 +657,17 @@ void leda_retmsg_free(char *msg)
 
 void leda_retinfo_free(leda_retinfo_t *retinfo)
 {
-    if(retinfo->message)
+    if (!retinfo)
+    {
+        return;
+    }
+
+    if (retinfo->message)
     {
         free(retinfo->message);
     }
-    if(retinfo->params)
+
+    if (retinfo->params)
     {
         free(retinfo->params);
     }
@@ -627,16 +675,19 @@ void leda_retinfo_free(leda_retinfo_t *retinfo)
 
 char *leda_mothedret_create(int code, const leda_device_data_t data[], int count)
 {
-    cJSON *object, *item;
-    char *params = NULL;
-    char *info;
-    int i = 0;
-    int num = 0;
+    cJSON   *object = NULL;
+    cJSON   *item   = NULL;
+
+    char    *params = NULL;
+    char    *info   = NULL;
+
+    int     i       = 0;
+    int     num     = 0;
 
     object = cJSON_CreateObject();
-    if(NULL == object)
+    if (NULL == object)
     {
-        free(params);
+        log_w(LEDA_TAG_NAME, "create cjson object failed\n");
         return NULL;
     }
 
@@ -786,13 +837,12 @@ char *leda_mothedret_create(int code, const leda_device_data_t data[], int count
         && (LE_SUCCESS == leda_string_validate_utf8(params, strlen(params))))
     {
         item = cJSON_Parse(params);
-        if(NULL != item)
+        if (NULL != item)
         {
             cJSON_AddItemToObject(object, "data", item);
         }
         else
         {
-            log_e(LEDA_TAG_NAME, "the method downstream data %s is not object\r\n", params);
             cJSON_AddItemToObject(object, "data", cJSON_CreateObject());
         }
     }
@@ -801,37 +851,42 @@ char *leda_mothedret_create(int code, const leda_device_data_t data[], int count
         cJSON_AddItemToObject(object, "data", cJSON_CreateObject());
     }
 
-    info = cJSON_Print(object);
+    info = cJSON_PrintUnformatted(object);
     cJSON_Delete(object);
-    if(NULL != params)
+    if (NULL != params)
     {
         free(params);
     }
+
     return info;
 }
 
 char *leda_params_parse(const char *params, char *key)
 {
-    char *value;
-    cJSON *root, *item;
+    cJSON *root  = NULL;
+    cJSON *item  = NULL;
+    char  *value = NULL;
 
     root = cJSON_Parse(params);    
     item = cJSON_GetObjectItem(root, key);
-    if(NULL == item)
+    if (NULL == item)
     {
-        log_e(LEDA_TAG_NAME, "result err:%s\r\n", params);
+        log_w(LEDA_TAG_NAME, "%s no %s feild\n", params, key);
         cJSON_Delete(root);
         return NULL;
     }
+
     value = (char *)malloc(strlen(item->valuestring)+1);
-    if(NULL == value)
+    if (NULL == value)
     {
-        log_e(LEDA_TAG_NAME, "no memory\r\n");
+        log_w(LEDA_TAG_NAME, "no memory can allocate\n");
         cJSON_Delete(root);
         return NULL;
     }
     snprintf(value, (strlen(item->valuestring)+1), "%s", item->valuestring);
+
     cJSON_Delete(root);
+
     return value;
 }
 
@@ -878,7 +933,7 @@ char *leda_transform_data_struct_to_string(const leda_device_data_t data[], int 
         }
     }
 
-    output = cJSON_Print(object);
+    output = cJSON_PrintUnformatted(object);
 
 END:
 
@@ -947,6 +1002,22 @@ int leda_transform_data_json_to_struct(const char* product_key,
             {
                 if (NULL != item->string)
                 {
+                    if (strlen(item->string) >= MAX_PARAM_NAME_LENGTH)
+                    {
+                        return 0;
+                    }
+                }
+
+                if (NULL != item->valuestring)
+                {
+                    if (strlen(item->valuestring) >= MAX_PARAM_VALUE_LENGTH)
+                    {
+                        return 0;
+                    }
+                }
+
+                if (NULL != item->string)
+                {
                     if (NULL != item->valuestring)
                     {
                         (*dev_data)[i].type = _leda_get_itemtype_from_tsl_serviecs(product_key, service_name, item->string);
@@ -978,7 +1049,7 @@ int leda_transform_data_json_to_struct(const char* product_key,
                     }
 
                     snprintf((*dev_data)[i].key, MAX_PARAM_NAME_LENGTH, "%s", item->string);
-                    buff = cJSON_Print(item);
+                    buff = cJSON_PrintUnformatted(item);
                     if (NULL != buff)
                     {
                         snprintf((*dev_data)[i].value, MAX_PARAM_VALUE_LENGTH, "%s", buff);

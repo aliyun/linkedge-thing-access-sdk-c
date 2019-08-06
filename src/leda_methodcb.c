@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 Alibaba Group. All rights reserved.
+ * Copyright (c) 2014-2019 Alibaba Group. All rights reserved.
  * License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -46,7 +46,7 @@ pthread_mutex_t g_methodcb_list_lock;
 
 LIST_HEAD(leda_send_head);
 LIST_HEAD(leda_receive_head);
-pthread_mutex_t g_leda_replay_lock;
+pthread_mutex_t g_leda_reply_lock;
 
 LIST_HEAD(leda_device_configcb_head);
 pthread_mutex_t g_device_configcb_lock;
@@ -54,6 +54,7 @@ pthread_mutex_t g_device_configcb_lock;
 #define LEDA_INTROSPECT_HEADER_STRING \
     "<!DOCTYPE node PUBLIC \"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN\"\n"\
     "\"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd\">\n"
+
 #define LEDA_INTROSPECT_END_STRING \
     "    <method name=\"callServices\">\n"\
     "      <arg direction=\"in\" type=\"s\" />\n"\
@@ -74,12 +75,14 @@ static int g_run_state = RUN_STATE_NORMAL;
 
 void leda_set_runstate(int state)
 {
-    if((RUN_STATE_NORMAL != state) && (RUN_STATE_EXIT != state))
+    if ((RUN_STATE_NORMAL != state) && (RUN_STATE_EXIT != state))
     {
+        log_w(LEDA_TAG_NAME, "state %d is illegal\n", state);
         return;
     }
 
     g_run_state = state;
+    return;
 }
 
 leda_device_info_t *leda_get_methodcb_by_cloud_id(const char *cloud_id)
@@ -89,13 +92,14 @@ leda_device_info_t *leda_get_methodcb_by_cloud_id(const char *cloud_id)
     pthread_mutex_lock(&g_methodcb_list_lock);
     list_for_each_entry_safe(pos, next, &leda_cb_head, list_node)
     {
-        if(strcmp(pos->cloud_id, cloud_id) == 0)
+        if (strcmp(pos->cloud_id, cloud_id) == 0)
         {
             device_info = pos;
             break;
         }
     }
     pthread_mutex_unlock(&g_methodcb_list_lock);
+
     return device_info;
 }
 
@@ -106,13 +110,14 @@ leda_device_info_t *leda_get_methodcb_by_device_handle(device_handle_t dev_handl
     pthread_mutex_lock(&g_methodcb_list_lock);
     list_for_each_entry_safe(pos, next, &leda_cb_head, list_node)
     {
-        if(dev_handle == pos->dev_handle)
+        if (dev_handle == pos->dev_handle)
         {
             device_info = pos;
             break;
         }
     }
     pthread_mutex_unlock(&g_methodcb_list_lock);
+
     return device_info;
 }
 
@@ -123,7 +128,7 @@ leda_device_info_t *leda_get_methodcb_by_dn_pk(const char *product_key, const ch
     pthread_mutex_lock(&g_methodcb_list_lock);
     list_for_each_entry_safe(pos, next, &leda_cb_head, list_node)
     {
-        if((strcmp(pos->product_key, product_key) == 0) 
+        if ((strcmp(pos->product_key, product_key) == 0) 
             && (strcmp(pos->dev_name, dev_name) == 0))
         {
             device_info = pos;
@@ -131,6 +136,7 @@ leda_device_info_t *leda_get_methodcb_by_dn_pk(const char *product_key, const ch
         }
     }
     pthread_mutex_unlock(&g_methodcb_list_lock);
+
     return device_info;
 }
 
@@ -140,7 +146,7 @@ void leda_set_methodcb_online(device_handle_t dev_handle, int state)
 
     if((STATE_ONLINE != state) && (STATE_OFFLINE != state))
     {
-        log_e(LEDA_TAG_NAME, "state is invalid\r\n");
+        log_w(LEDA_TAG_NAME, "state %d is illegal\n", state);
         return;
     }
 
@@ -154,6 +160,8 @@ void leda_set_methodcb_online(device_handle_t dev_handle, int state)
         }
     }
     pthread_mutex_unlock(&g_methodcb_list_lock);
+
+    return;
 }
 
 leda_device_info_t * leda_insert_methodcb(const char *cloud_id, 
@@ -165,28 +173,29 @@ leda_device_info_t * leda_insert_methodcb(const char *cloud_id,
                                           int is_local,
                                           void *usr_data)
 {
-    leda_device_info_t *device_info;
+    leda_device_info_t *device_info = NULL;
 
     device_info = (leda_device_info_t *)malloc(sizeof(leda_device_info_t));
-    if(NULL == device_info)
+    if (NULL == device_info)
     {
-        log_e(LEDA_TAG_NAME, "no memory\r\n");
+        log_w(LEDA_TAG_NAME, "no memory can allocate\n");
         return NULL;
     }
+
     memset(device_info, 0, sizeof(leda_device_info_t));
     device_info->cloud_id = (char *)malloc(strlen(cloud_id)+1);
-    if(NULL == device_info->cloud_id)
+    if (NULL == device_info->cloud_id)
     {
-        log_e(LEDA_TAG_NAME, "no memory\r\n");
+        log_w(LEDA_TAG_NAME, "no memory can allocate\n");
         free(device_info);
         return NULL;
     }
     strcpy(device_info->cloud_id, cloud_id);
     
     device_info->product_key = (char *)malloc(strlen(product_key)+1);
-    if(NULL == device_info->product_key)
+    if (NULL == device_info->product_key)
     {
-        log_e(LEDA_TAG_NAME, "no memory\r\n");
+        log_w(LEDA_TAG_NAME, "no memory can allocate\n");
         free(device_info->cloud_id);
         free(device_info);
         return NULL;
@@ -194,9 +203,9 @@ leda_device_info_t * leda_insert_methodcb(const char *cloud_id,
     strcpy(device_info->product_key, product_key);
 
     device_info->dev_name = (char *)malloc(strlen(dev_name)+1);
-    if(NULL == device_info->dev_name)
+    if (NULL == device_info->dev_name)
     {
-        log_e(LEDA_TAG_NAME, "no memory\r\n");
+        log_w(LEDA_TAG_NAME, "no memory can allocate\n");
         free(device_info->cloud_id);
         free(device_info->product_key);
         free(device_info);
@@ -204,15 +213,15 @@ leda_device_info_t * leda_insert_methodcb(const char *cloud_id,
     }
     strcpy(device_info->dev_name, dev_name);
 
-    device_info->dev_handle = dev_handle;
-    device_info->service_output_max_count = device_cb->service_output_max_count;
-    device_info->call_service_cb = device_cb->call_service_cb;
-    device_info->get_properties_cb = device_cb->get_properties_cb;
-    device_info->set_properties_cb = device_cb->set_properties_cb;
-    device_info->usr_data = usr_data;
-    device_info->is_local_name = is_local_name;
-    device_info->is_local = is_local;
-    device_info->online  = STATE_OFFLINE;
+    device_info->dev_handle                 = dev_handle;
+    device_info->service_output_max_count   = device_cb->service_output_max_count;
+    device_info->call_service_cb            = device_cb->call_service_cb;
+    device_info->get_properties_cb          = device_cb->get_properties_cb;
+    device_info->set_properties_cb          = device_cb->set_properties_cb;
+    device_info->usr_data                   = usr_data;
+    device_info->is_local_name              = is_local_name;
+    device_info->is_local                   = is_local;
+    device_info->online                     = STATE_OFFLINE;
 
     pthread_mutex_lock(&g_methodcb_list_lock);
     list_add(&device_info->list_node, &leda_cb_head);
@@ -223,102 +232,16 @@ leda_device_info_t * leda_insert_methodcb(const char *cloud_id,
 
 void leda_remove_methodcb(device_handle_t dev_handle)
 {
-    leda_device_info_t *device_info;
+    leda_device_info_t *device_info = NULL;
 
     device_info = leda_get_methodcb_by_device_handle(dev_handle);
-    if(NULL == device_info)
+    if (NULL == device_info)
     {
         return;
     }
+
     pthread_mutex_lock(&g_methodcb_list_lock);
     list_del(&device_info->list_node);
-    if(device_info->cloud_id)
-    {
-        free(device_info->cloud_id);
-    }
-    if(device_info->dev_name)
-    {
-        free(device_info->dev_name);
-    }
-    if(device_info->product_key)
-    {
-        free(device_info->product_key);
-    }
-    if(device_info)
-    {
-        free(device_info);
-    }
-    pthread_mutex_unlock(&g_methodcb_list_lock);
-
-    return;
-}
-
-leda_device_info_t *leda_copy_device_info(const leda_device_info_t *device_info_src)
-{
-    leda_device_info_t *device_info;
-
-    if (NULL == device_info_src)
-    {
-        return NULL;
-    }
-
-    device_info = (leda_device_info_t *)malloc(sizeof(leda_device_info_t));
-    if (NULL == device_info)
-    {
-        log_e(LEDA_TAG_NAME, "no memory\r\n");
-        return NULL;
-    }
-    memset(device_info, 0, sizeof(leda_device_info_t));
-    device_info->cloud_id = (char *)malloc(strlen(device_info_src->cloud_id) + 1);
-    if (NULL == device_info->cloud_id)
-    {
-        log_e(LEDA_TAG_NAME, "no memory\r\n");
-        free(device_info);
-        return NULL;
-    }
-    strcpy(device_info->cloud_id, device_info_src->cloud_id);
-    
-    device_info->product_key = (char *)malloc(strlen(device_info_src->product_key) + 1);
-    if (NULL == device_info->product_key)
-    {
-        log_e(LEDA_TAG_NAME, "no memory\r\n");
-        free(device_info->cloud_id);
-        free(device_info);
-        return NULL;
-    }
-    strcpy(device_info->product_key, device_info_src->product_key);
-
-    device_info->dev_name = (char *)malloc(strlen(device_info_src->dev_name) + 1);
-    if (NULL == device_info->dev_name)
-    {
-        log_e(LEDA_TAG_NAME, "no memory\r\n");
-        free(device_info->cloud_id);
-        free(device_info->product_key);
-        free(device_info);
-        return NULL;
-    }
-    strcpy(device_info->dev_name, device_info_src->dev_name);
-
-    device_info->dev_handle                 = device_info_src->dev_handle;
-    device_info->call_service_cb            = device_info_src->call_service_cb;
-    device_info->get_properties_cb          = device_info_src->get_properties_cb;
-    device_info->set_properties_cb          = device_info_src->set_properties_cb;
-    device_info->usr_data                   = device_info_src->usr_data;
-    device_info->online                     = device_info_src->online;
-    device_info->service_output_max_count   = device_info_src->service_output_max_count;
-    device_info->is_local_name              = device_info_src->is_local_name;
-    device_info->is_local                   = device_info_src->is_local;
-
-    return device_info;
-}
-
-void leda_delete_device_info(leda_device_info_t *device_info)
-{
-    if (NULL == device_info)
-    {
-        return;
-    }
-
     if (device_info->cloud_id)
     {
         free(device_info->cloud_id);
@@ -337,8 +260,11 @@ void leda_delete_device_info(leda_device_info_t *device_info)
     if (device_info)
     {
         free(device_info);
-        device_info = NULL;
     }
+
+    pthread_mutex_unlock(&g_methodcb_list_lock);
+
+    return;
 }
 
 static leda_reply_t *_leda_get_reply_from_reveive(uint32_t serial_id)
@@ -349,15 +275,15 @@ static leda_reply_t *_leda_get_reply_from_reveive(uint32_t serial_id)
     clock_gettime(CLOCK_REALTIME, &tout);
     list_for_each_entry_safe(pos, next, &leda_receive_head, list_node)
     {
-        if(pos->serial_id == serial_id)
+        if (pos->serial_id == serial_id)
         {
             bus_reply = pos;
             break;
         }
 
-        if((tout.tv_sec-pos->tout.tv_sec) > 10)
+        if ((tout.tv_sec-pos->tout.tv_sec) > 10)
         {
-            log_d(LEDA_TAG_NAME, "reply:%d timeout:%d\n", pos->serial_id, pos->tout.tv_sec);
+            log_d(LEDA_TAG_NAME, "reply: %d timeout: %d\n", pos->serial_id, pos->tout.tv_sec);
             list_del(&pos->list_node);
             if(pos->reply)
             {
@@ -376,7 +302,7 @@ static leda_reply_t *_leda_get_reply_from_send(uint32_t serial_id)
 
     list_for_each_entry_safe(pos, next, &leda_send_head, list_node)
     {
-        if(pos->serial_id == serial_id)
+        if (pos->serial_id == serial_id)
         {
             bus_reply = pos;
             break;
@@ -388,47 +314,19 @@ static leda_reply_t *_leda_get_reply_from_send(uint32_t serial_id)
 
 static int _leda_set_send_reply(uint32_t serial_id, DBusMessage *reply)
 {
-    leda_reply_t *bus_reply;
+    leda_reply_t *bus_reply = NULL;
 
-    pthread_mutex_lock(&g_leda_replay_lock);
+    pthread_mutex_lock(&g_leda_reply_lock);
     bus_reply = _leda_get_reply_from_send(serial_id);
-    if(NULL == bus_reply)
+    if (NULL == bus_reply)
     {
-        pthread_mutex_unlock(&g_leda_replay_lock);
+        pthread_mutex_unlock(&g_leda_reply_lock);
         return LE_ERROR_UNKNOWN;
     }
     
-    log_d(LEDA_TAG_NAME, "method reply:%d\r\n", serial_id);
+    log_d(LEDA_TAG_NAME, "method reply: %d\n", serial_id);
     bus_reply->reply = reply;
-    pthread_mutex_unlock(&g_leda_replay_lock);
-
-    return LE_SUCCESS;
-}
-
-int leda_insert_receive_reply(uint32_t serial_id, DBusMessage *reply)
-{
-    leda_reply_t *bus_reply;
-
-    if(NULL == reply)
-    {
-        return LE_ERROR_INVAILD_PARAM;
-    }
-
-    bus_reply = (leda_reply_t *)malloc(sizeof(leda_reply_t));
-    if(NULL == bus_reply)
-    {
-        log_e(LEDA_TAG_NAME, "no memory\r\n");
-        return LE_ERROR_ALLOCATING_MEM;
-    }
-    bus_reply->serial_id = serial_id;
-    bus_reply->reply = reply;
-    clock_gettime(CLOCK_REALTIME, &bus_reply->tout);
-
-    pthread_mutex_lock(&g_leda_replay_lock);
-    list_add(&bus_reply->list_node, &leda_receive_head);
-    pthread_mutex_unlock(&g_leda_replay_lock);
-
-    log_i(LEDA_TAG_NAME, "insert receive reply serial_id:%d\r\n", serial_id);
+    pthread_mutex_unlock(&g_leda_reply_lock);
 
     return LE_SUCCESS;
 }
@@ -437,9 +335,9 @@ leda_reply_t *leda_insert_send_reply(uint32_t serial_id)
 {
     leda_reply_t *bus_reply = NULL;
 
-    pthread_mutex_lock(&g_leda_replay_lock);
+    pthread_mutex_lock(&g_leda_reply_lock);
     bus_reply = _leda_get_reply_from_reveive(serial_id);
-    if(NULL != bus_reply)
+    if (NULL != bus_reply)
     {
         list_del(&bus_reply->list_node);
         list_add(&bus_reply->list_node, &leda_send_head);
@@ -449,8 +347,8 @@ leda_reply_t *leda_insert_send_reply(uint32_t serial_id)
         bus_reply = (leda_reply_t *)malloc(sizeof(leda_reply_t));
         if(NULL == bus_reply)
         {
-            log_e(LEDA_TAG_NAME, "no memory\n");
-            pthread_mutex_unlock(&g_leda_replay_lock);
+            log_w(LEDA_TAG_NAME, "no memory can allocate\n");
+            pthread_mutex_unlock(&g_leda_reply_lock);
             return NULL;
         }
         bus_reply->serial_id = serial_id;
@@ -459,24 +357,52 @@ leda_reply_t *leda_insert_send_reply(uint32_t serial_id)
 
         list_add(&bus_reply->list_node, &leda_send_head);
     }
-    pthread_mutex_unlock(&g_leda_replay_lock);
+    pthread_mutex_unlock(&g_leda_reply_lock);
 
-    log_i(LEDA_TAG_NAME, "insert reply serial_id:%d\n", serial_id);
+    log_i(LEDA_TAG_NAME, "insert reply serial_id: %d\n", serial_id);
 
     return bus_reply;
 }
 
+int leda_insert_receive_reply(uint32_t serial_id, DBusMessage *reply)
+{
+    leda_reply_t *bus_reply = NULL;
+
+    if (NULL == reply)
+    {
+        return LE_ERROR_INVAILD_PARAM;
+    }
+
+    bus_reply = (leda_reply_t *)malloc(sizeof(leda_reply_t));
+    if(NULL == bus_reply)
+    {
+        log_w(LEDA_TAG_NAME, "no memory can allocate\n");
+        return LE_ERROR_ALLOCATING_MEM;
+    }
+    bus_reply->serial_id = serial_id;
+    bus_reply->reply = reply;
+    clock_gettime(CLOCK_REALTIME, &bus_reply->tout);
+
+    pthread_mutex_lock(&g_leda_reply_lock);
+    list_add(&bus_reply->list_node, &leda_receive_head);
+    pthread_mutex_unlock(&g_leda_reply_lock);
+
+    log_i(LEDA_TAG_NAME, "insert receive reply serial_id: %d\n", serial_id);
+
+    return LE_SUCCESS;
+}
+
 void leda_remove_reply(leda_reply_t *bus_reply)
 {
-    if(NULL == bus_reply)
+    if (NULL == bus_reply)
     {
         return;
     }
 
-    pthread_mutex_lock(&g_leda_replay_lock);
+    pthread_mutex_lock(&g_leda_reply_lock);
     list_del(&bus_reply->list_node);
-    pthread_mutex_unlock(&g_leda_replay_lock);
-    if(bus_reply->reply)
+    pthread_mutex_unlock(&g_leda_reply_lock);
+    if (bus_reply->reply)
     {
         dbus_message_unref(bus_reply->reply);
     }
@@ -489,14 +415,14 @@ int leda_get_reply_params(leda_reply_t *bus_reply, int timeout_ms)
 {
     int time_count = 0;
 
-    if(NULL == bus_reply)
+    if (NULL == bus_reply)
     {
         return LE_ERROR_UNKNOWN;
     }
 
-    while(timeout_ms > time_count)
+    while (timeout_ms > time_count)
     {
-        if(NULL != bus_reply->reply)
+        if (NULL != bus_reply->reply)
         {
             return LE_SUCCESS;
         }
@@ -529,16 +455,14 @@ static void _leda_deviceconnect_message_proc(DBusConnection *connection, DBusMes
     char        *result = NULL;
 
     dbus_error_init(&dbus_error);
-
     dbus_message_get_args(message, &dbus_error, DBUS_TYPE_STRING, &info, DBUS_TYPE_INVALID);
     if (!(dbus_error_is_set(&dbus_error)) && (NULL != info))
     {
-        log_d(LEDA_TAG_NAME, "device connect result: %s \r\n", info);
+        log_d(LEDA_TAG_NAME, "device connect result: %s \n", info);
     }
     dbus_error_free(&dbus_error);
 
     result = leda_retmsg_create(LE_SUCCESS, NULL);
-    
     reply = dbus_message_new_method_return(message);
     dbus_message_append_args(reply, DBUS_TYPE_STRING, &result, DBUS_TYPE_INVALID);
     dbus_connection_send(connection, reply, NULL);
@@ -573,7 +497,7 @@ static void _leda_deviceconfig_message_proc(DBusConnection *connection, DBusMess
         if (!dbus_message_get_args(message, &dbus_error, DBUS_TYPE_STRING, &key, DBUS_TYPE_STRING, &value, DBUS_TYPE_INVALID)
             || (NULL == key))
         {
-            log_e(LEDA_TAG_NAME, "configmanager notify device config failed");
+            log_w(LEDA_TAG_NAME, "get args failed from dbus_message_get_args: %s\n", key);
             return;
         }
         dbus_error_free(&dbus_error);
@@ -581,9 +505,9 @@ static void _leda_deviceconfig_message_proc(DBusConnection *connection, DBusMess
         pthread_mutex_lock(&g_device_configcb_lock);
         list_for_each_entry_safe(pos, next, &leda_device_configcb_head, list_node)
         {
-            if (strstr(key, pos->module_name))
+            if (strstr(key, pos->module_id))
             {
-                ret = pos->device_configcb(key, value);
+                ret = pos->device_configcb(value);
                 break;
             }
         }
@@ -605,7 +529,7 @@ static void _leda_device_message_proc(DBusConnection *connection, DBusMessage *m
     const char *method_name = NULL;
 
     method_name = dbus_message_get_member(message);
-    log_d(LEDA_TAG_NAME, "method_name: %s \r\n", method_name);
+    log_d(LEDA_TAG_NAME, "method_name: %s \n", method_name);
 
     if (!strcmp(method_name, DMP_CONFIGMANAGER_METHOD_NOTIFY))
     {
@@ -621,43 +545,54 @@ static void _leda_device_message_proc(DBusConnection *connection, DBusMessage *m
 
 static void _leda_driver_message_proc(DBusConnection *connection, DBusMessage *message)
 {
-    int type;
-    char *driver_name;
-    DBusMessage *reply = NULL;
-    DBusError dbus_error;
-    const char *method_name = NULL;
-    cJSON *object, *sub_object, *item, *sub_item;
-    leda_device_info_t *pos, *next;
-    int dev_cnt, online_state;
-    char *buff, *params = NULL;
+
+    char                *driver_name    = NULL;
+
+    DBusMessage         *reply          = NULL;
+    DBusError           dbus_error;
+    const char          *method_name    = NULL;
+
+    cJSON               *object         = NULL;
+    cJSON               *sub_object     = NULL;
+    cJSON               *item           = NULL;
+    cJSON               *sub_item       = NULL;
+
+    leda_device_info_t  *pos            = NULL;
+    leda_device_info_t  *next           = NULL;
+
+    int                 dev_cnt         = 0;
+    int                 online_state    = STATE_ALL;
+
+    char                *buff           = NULL;
+    char                *params         = NULL;
     
-    if((NULL != dbus_message_get_path(message)) 
+    if ((NULL != dbus_message_get_path(message)) 
         && (!strncmp(dbus_message_get_path(message), LEDA_DRIVER_PATH, strlen(LEDA_DRIVER_PATH))))
     {
         driver_name = (char *)malloc(strlen(dbus_message_get_path(message))-strlen(LEDA_DRIVER_PATH)+1);
-        if(NULL == driver_name)
+        if (NULL == driver_name)
         {
             return;
         }
         snprintf(driver_name, (strlen(dbus_message_get_path(message))-strlen(LEDA_DRIVER_PATH)+1), 
             "%s", dbus_message_get_path(message)+strlen(LEDA_DRIVER_PATH));
     }
-    else if((NULL != dbus_message_get_interface(message)) 
+    else if ((NULL != dbus_message_get_interface(message)) 
         && (!strncmp(dbus_message_get_interface(message), LEDA_DRIVER_WKN, strlen(LEDA_DRIVER_WKN))))
     {
         driver_name = (char *)malloc(strlen(dbus_message_get_interface(message))-strlen(LEDA_DRIVER_WKN)+1);
-        if(NULL == driver_name)
+        if (NULL == driver_name)
         {
             return;
         }
         snprintf(driver_name, (strlen(dbus_message_get_interface(message))-strlen(LEDA_DRIVER_WKN)+1), 
             "%s", dbus_message_get_interface(message)+strlen(LEDA_DRIVER_WKN));
     }
-    else if((NULL != dbus_message_get_destination(message)) 
+    else if ((NULL != dbus_message_get_destination(message)) 
         && (!strncmp(dbus_message_get_destination(message), LEDA_DRIVER_WKN, strlen(LEDA_DRIVER_WKN))))
     {
         driver_name = (char *)malloc(strlen(dbus_message_get_destination(message))-strlen(LEDA_DRIVER_WKN)+1);
-        if(NULL == driver_name)
+        if (NULL == driver_name)
         {
             return;
         }
@@ -668,16 +603,16 @@ static void _leda_driver_message_proc(DBusConnection *connection, DBusMessage *m
     {
         return;
     }
-    log_d(LEDA_TAG_NAME, "driver_name :%s\r\n", driver_name);
-    type = dbus_message_get_type(message);
-    if(DBUS_MESSAGE_TYPE_METHOD_CALL == type)
+
+    log_d(LEDA_TAG_NAME, "driver_name :%s\n", driver_name);
+    if (DBUS_MESSAGE_TYPE_METHOD_CALL == dbus_message_get_type(message))
     {
         reply = dbus_message_new_method_return(message);
         method_name = dbus_message_get_member(message);
-        if(!strcmp(method_name, DMP_METHOD_INTROSPECT))
+        if (!strcmp(method_name, DMP_METHOD_INTROSPECT))
         {
             buff = (char *)malloc(1024);
-            if(NULL == buff)
+            if (NULL == buff)
             {
                 dbus_connection_send(connection, reply, NULL);
             }
@@ -687,7 +622,7 @@ static void _leda_driver_message_proc(DBusConnection *connection, DBusMessage *m
                 snprintf(buff, 1024, "%s<node>\n  <interface name=\"%s%s\">\n%s", 
                     LEDA_INTROSPECT_HEADER_STRING, LEDA_DRIVER_WKN, driver_name, LEDA_DRIVER_INTROSPECT_END_STRING);
 
-                log_d(LEDA_TAG_NAME, "introspect:%s\r\n", buff);
+                log_d(LEDA_TAG_NAME, "introspect:%s\n", buff);
                 dbus_message_append_args(reply, DBUS_TYPE_STRING, &buff, DBUS_TYPE_INVALID);
                 dbus_connection_send(connection, reply, NULL);
                 free(buff);
@@ -698,17 +633,17 @@ static void _leda_driver_message_proc(DBusConnection *connection, DBusMessage *m
             dbus_error_init(&dbus_error);
             dbus_message_get_args(message, &dbus_error, DBUS_TYPE_STRING, &params, DBUS_TYPE_INVALID);
             dbus_error_free(&dbus_error);
-            if(NULL == params)
+            if (NULL == params)
             {
                 online_state = STATE_ALL;
             }
             else
             {
-                if(!strcmp(params, "deviceState=online"))
+                if (!strcmp(params, "deviceState=online"))
                 {
                     online_state = STATE_ONLINE;
                 }
-                else if(!strcmp(params, "deviceState=offline"))
+                else if (!strcmp(params, "deviceState=offline"))
                 {
                     online_state = STATE_OFFLINE;
                 }
@@ -717,12 +652,12 @@ static void _leda_driver_message_proc(DBusConnection *connection, DBusMessage *m
                     online_state = STATE_ALL;
                 }
             }
+
             item = cJSON_CreateArray();
-            dev_cnt = 0;
             pthread_mutex_lock(&g_methodcb_list_lock);
             list_for_each_entry_safe(pos, next, &leda_cb_head, list_node)
             {
-                if((STATE_ALL == online_state) || (online_state == pos->online))
+                if ((STATE_ALL == online_state) || (online_state == pos->online))
                 {
                     sub_item = cJSON_CreateString((const char *)pos->cloud_id);
                     cJSON_AddItemToArray(item, sub_item);
@@ -730,43 +665,50 @@ static void _leda_driver_message_proc(DBusConnection *connection, DBusMessage *m
                 }
             }
             pthread_mutex_unlock(&g_methodcb_list_lock);
+
             sub_object = cJSON_CreateObject();
             cJSON_AddItemToObject(sub_object, "devList", item);
             cJSON_AddNumberToObject(sub_object, "devNum", dev_cnt);
             
             object = cJSON_CreateObject();
             cJSON_AddItemToObject(object, "params", sub_object);
-            buff = cJSON_Print(object);
+            buff = cJSON_PrintUnformatted(object);
             dbus_message_append_args(reply, DBUS_TYPE_STRING, &buff, DBUS_TYPE_INVALID);
             dbus_connection_send(connection, reply, NULL);
+
             cJSON_free(buff);
             cJSON_Delete(object);
         }
         dbus_message_unref(reply);
     }
     free(driver_name);
+
+    return;
 }
 
 static void _leda_introspect_proc(DBusConnection *connection, char *cloud_id, DBusMessage *reply)
 {
-    char *introspect;
+    char *introspect = NULL;
 
     introspect = (char *)malloc(1024);
-    if(NULL == introspect)
+    if (NULL == introspect)
     {
         dbus_connection_send(connection, reply, NULL);
         dbus_message_unref(reply);
         return;
     }
+
     memset(introspect, 0, 1024);
     snprintf(introspect, 1024, "%s<node>\n  <interface name=\"%s%s\">\n%s", 
         LEDA_INTROSPECT_HEADER_STRING, LEDA_DEVICE_WKN, cloud_id, LEDA_INTROSPECT_END_STRING);
 
-    log_d(LEDA_TAG_NAME, "introspect:%s\r\n", introspect);
+    log_d(LEDA_TAG_NAME, "introspect:%s\n", introspect);
     dbus_message_append_args(reply, DBUS_TYPE_STRING, &introspect, DBUS_TYPE_INVALID);
     dbus_connection_send(connection, reply, NULL);
     dbus_message_unref(reply);
     free(introspect);
+
+    return;
 }
 
 static void _leda_method_reply_proc(DBusMessage *reply)
@@ -783,46 +725,54 @@ static void _leda_method_reply_proc(DBusMessage *reply)
         return;
     }
 
-    log_e(LEDA_TAG_NAME, "serial:%d reply proc failed.\n", dbus_message_get_reply_serial(reply));
+    log_w(LEDA_TAG_NAME, "serial: %d reply proc failed.\n", dbus_message_get_reply_serial(reply));
     dbus_message_unref(reply);
+
+    return;
 }
 
 static void *_leda_methodcb_proc(void *arg)
 {
-    leda_methodcall_info_t *methodcall_info = (leda_methodcall_info_t *)arg;
-    leda_device_info_t *device_info = NULL;
-    cJSON *object = NULL, *item = NULL;
-    int params_count = 0;
-    leda_device_data_t *dev_data_input = NULL, *dev_data_output = NULL;
-    char *params = NULL;
-    char *info = NULL;
-    int i;
-    int ret;
+    leda_methodcall_info_t  *methodcall_info    = (leda_methodcall_info_t *)arg;
+    leda_device_info_t      *device_info        = NULL;
 
-    if(NULL == methodcall_info)
+    cJSON                   *object             = NULL;
+    cJSON                   *item               = NULL;
+
+    int                     params_count        = 0;
+    leda_device_data_t      *dev_data_input     = NULL;
+    leda_device_data_t      *dev_data_output    = NULL;
+    char                    *params             = NULL;
+    char                    *info               = NULL;
+
+    int                     i                   = 0;
+    int                     ret                 = LE_SUCCESS;
+
+    if (NULL == methodcall_info)
     {
         return NULL;
     }
 
-    device_info = leda_copy_device_info(leda_get_methodcb_by_cloud_id(methodcall_info->cloud_id));
-    if(NULL == device_info)
+    device_info = leda_get_methodcb_by_cloud_id(methodcall_info->cloud_id);
+    if (NULL == device_info)
     {
         info = leda_retmsg_create(LE_ERROR_INVAILD_PARAM, NULL);
-        goto err;
+        goto END;
     }
 
-    log_d(LEDA_TAG_NAME, "proc cloud_id:%s, dev_handle:%d, serial:%d\r\n", 
-        methodcall_info->cloud_id, device_info->dev_handle, 
-        dbus_message_get_reply_serial(methodcall_info->reply));
+    log_d(LEDA_TAG_NAME, "methodcb_proc request cloud_id: %s, dev_handle: %d, serial: %d\n", 
+                         methodcall_info->cloud_id, 
+                         device_info->dev_handle, 
+                         dbus_message_get_reply_serial(methodcall_info->reply));
 
-    if(strcmp(methodcall_info->method_name, DMP_METHOD_CALLMETHOD))
+    if (strcmp(methodcall_info->method_name, DMP_METHOD_CALLMETHOD))
     {
         info = leda_retmsg_create(LE_ERROR_INVAILD_PARAM, NULL);
-        goto err;
+        goto END;
     }
 
     object = cJSON_Parse(methodcall_info->params);
-    if(NULL != object)
+    if (NULL != object)
     {
         item = cJSON_GetObjectItem(object, "params");
     }
@@ -833,7 +783,7 @@ static void *_leda_methodcb_proc(void *arg)
         if ((params_count == 0) || (NULL == dev_data_input))
         {
             info = leda_retmsg_create(LE_ERROR_INVAILD_PARAM, NULL);
-            goto err;
+            goto END;
         }
 
         ret = (*device_info->get_properties_cb)(device_info->dev_handle, 
@@ -849,7 +799,7 @@ static void *_leda_methodcb_proc(void *arg)
         if ((params_count == 0) || (NULL == dev_data_input))
         {
             info = leda_retmsg_create(LE_ERROR_INVAILD_PARAM, NULL);
-            goto err;
+            goto END;
         }
         
         ret = (*device_info->set_properties_cb)(device_info->dev_handle, 
@@ -867,7 +817,7 @@ static void *_leda_methodcb_proc(void *arg)
             if (NULL == dev_data_output)
             {
                 info = leda_retmsg_create(LE_ERROR_ALLOCATING_MEM, NULL);
-                goto err;
+                goto END;
             }
 
             memset(dev_data_output, 0, sizeof(leda_device_data_t) * device_info->service_output_max_count);
@@ -887,201 +837,220 @@ static void *_leda_methodcb_proc(void *arg)
         info = leda_retmsg_create(ret, params);
     }
 
-err:    
-    log_d(LEDA_TAG_NAME, "return cloud_id:%s, method:%s, services:%s, serial:%d params:%s \r\n", 
+END:    
+    log_d(LEDA_TAG_NAME, "reply cloud_id: %s, method_name: %s, service_name: %s, serial: %d params: %s \n", 
                          methodcall_info->cloud_id, 
                          methodcall_info->method_name, 
                          methodcall_info->service_name, 
                          dbus_message_get_reply_serial(methodcall_info->reply), 
                          info);
 
-    leda_delete_device_info(device_info);
-
     dbus_message_append_args(methodcall_info->reply, DBUS_TYPE_STRING, &info, DBUS_TYPE_INVALID);
     dbus_connection_send(methodcall_info->connection, methodcall_info->reply, NULL);
     leda_retmsg_free(info);
     dbus_message_unref(methodcall_info->reply);
 
-    if(methodcall_info->cloud_id)
+    if (methodcall_info->cloud_id)
     {
         free(methodcall_info->cloud_id);
     }
-    if(methodcall_info->method_name)
+
+    if (methodcall_info->method_name)
     {
         free(methodcall_info->method_name);
     }
-    if(methodcall_info->service_name)
+
+    if (methodcall_info->service_name)
     {
         free(methodcall_info->service_name);
     }
-    if(methodcall_info->params)
+
+    if (methodcall_info->params)
     {
         free(methodcall_info->params);
     }
-    if(methodcall_info)
+
+    if (methodcall_info)
     {
         free(methodcall_info);
     }
-    if(NULL != object)
+
+    if (NULL != object)
     {
         cJSON_Delete(object);
     }
-    if(NULL != dev_data_input)
+
+    if (NULL != dev_data_input)
     {
         free(dev_data_input);
     }
-    if(NULL != dev_data_output)
+
+    if (NULL != dev_data_output)
     {
         free(dev_data_output);
     }
-    if(NULL != params)
+
+    if (NULL != params)
     {
         free(params);
     }
+
     return NULL;
 }
 
 static void _leda_methodcb_send(DBusConnection *connection, char *cloud_id, DBusMessage *call_msg, DBusMessage *reply)
 {
-    const char *method_name = NULL;
-    char *service_name = NULL;
-    char *params = NULL;
-    char *info = NULL;
-    DBusError dbus_error;
-    leda_methodcall_info_t *methodcall_info = NULL;
+    const char              *method_name     = NULL;
+    char                    *service_name    = NULL;
+
+    char                    *params          = NULL;
+    char                    *info            = NULL;
+    leda_methodcall_info_t  *methodcall_info = NULL;
+
+    DBusError               dbus_error;
+    
 
     dbus_error_init(&dbus_error);
     method_name = dbus_message_get_member(call_msg);
-
-    if(NULL == method_name)
+    if (NULL == method_name)
     {
         info = leda_retmsg_create(LE_ERROR_INVAILD_PARAM, NULL);
     }
     else
     {
         methodcall_info = (leda_methodcall_info_t *)malloc(sizeof(leda_methodcall_info_t));
-        if(NULL == methodcall_info)
+        if (NULL == methodcall_info)
         {
             info = leda_retmsg_create(LE_ERROR_ALLOCATING_MEM, NULL);
-            goto err;
+            goto END;
         }
         memset(methodcall_info, 0, sizeof(leda_methodcall_info_t));
         
         methodcall_info->cloud_id = (char *)malloc(strlen(cloud_id)+1);
-        if(NULL == methodcall_info->cloud_id)
+        if (NULL == methodcall_info->cloud_id)
         {
             info = leda_retmsg_create(LE_ERROR_ALLOCATING_MEM, NULL);
-            goto err;
+            goto END;
         }
         strcpy(methodcall_info->cloud_id, cloud_id);
         
         methodcall_info->method_name = (char *)malloc(strlen(method_name)+1);
-        if(NULL == methodcall_info->method_name)
+        if (NULL == methodcall_info->method_name)
         {
             info = leda_retmsg_create(LE_ERROR_ALLOCATING_MEM, NULL);
-            goto err;
+            goto END;
         }
         strcpy(methodcall_info->method_name, method_name);
 
-        if(!strcmp(methodcall_info->method_name, DMP_METHOD_CALLMETHOD))
+        if (!strcmp(methodcall_info->method_name, DMP_METHOD_CALLMETHOD))
         {
-            dbus_message_get_args(call_msg, &dbus_error, DBUS_TYPE_STRING, &service_name, 
-                DBUS_TYPE_STRING, &params, DBUS_TYPE_INVALID);
-            if(NULL == service_name)
+            dbus_message_get_args(call_msg, &dbus_error, DBUS_TYPE_STRING, &service_name, DBUS_TYPE_STRING, &params, DBUS_TYPE_INVALID);
+            if (NULL == service_name)
             {
                 info = leda_retmsg_create(LE_ERROR_INVAILD_PARAM, NULL);
-                goto err;
+                goto END;
             }
-            if((dbus_error_is_set(&dbus_error)) || (NULL == params))
+
+            if ((dbus_error_is_set(&dbus_error)) || (NULL == params))
             {
                 methodcall_info->params = NULL;
             }
             else
             {
                 methodcall_info->params = (char *)malloc(strlen(params)+1);
-                if(NULL == methodcall_info->params)
+                if (NULL == methodcall_info->params)
                 {
                     info = leda_retmsg_create(LE_ERROR_ALLOCATING_MEM, NULL);
-                    goto err;
+                    goto END;
                 }
                 strcpy(methodcall_info->params, params);
             }
+
             methodcall_info->service_name = (char *)malloc(strlen(service_name)+1);
-            if(NULL == methodcall_info->service_name)
+            if (NULL == methodcall_info->service_name)
             {
                 info = leda_retmsg_create(LE_ERROR_ALLOCATING_MEM, NULL);
-                goto err;
+                goto END;
             }
             strcpy(methodcall_info->service_name, service_name);
         }
         else
         {
-            log_e(LEDA_TAG_NAME, "method:%s not support\r\n", methodcall_info->method_name);
+            log_w(LEDA_TAG_NAME, "unsupport method: %s\n", methodcall_info->method_name);
             info = leda_retmsg_create(LE_ERROR_INVAILD_PARAM, NULL);
-            goto err;
+            goto END;
         }
         
         methodcall_info->connection = connection;
-        methodcall_info->reply = reply;
+        methodcall_info->reply      = reply;
 
-        log_d(LEDA_TAG_NAME, "add thread cloud_id:%s, method:%s, services:%s, serial:%d, params:%s \r\n", 
-            methodcall_info->cloud_id, methodcall_info->method_name, 
-            methodcall_info->service_name, dbus_message_get_reply_serial(reply), methodcall_info->params);
+        log_d(LEDA_TAG_NAME, "add method_proc to threadpool cloud_id: %s, method_name: %s, service_name: %s, serial: %d, params: %s \n", 
+                             methodcall_info->cloud_id, 
+                             methodcall_info->method_name, 
+                             methodcall_info->service_name, 
+                             dbus_message_get_reply_serial(reply), 
+                             methodcall_info->params);
         leda_pool_add_worker(&_leda_methodcb_proc, (void *)methodcall_info);
     }
 
-err:
-    if(NULL != info)
+END:
+    if (NULL != info)
     {
         dbus_message_append_args(reply, DBUS_TYPE_STRING, &info, DBUS_TYPE_INVALID);
         dbus_connection_send(connection, reply, NULL);
         dbus_message_unref(reply);
         leda_retmsg_free(info);
-        if(methodcall_info)
+
+        if (methodcall_info)
         {
-            if(methodcall_info->cloud_id)
+            if (methodcall_info->cloud_id)
             {
                 free(methodcall_info->cloud_id);
             }
-            if(methodcall_info->method_name)
+
+            if (methodcall_info->method_name)
             {
                 free(methodcall_info->method_name);
             }
-            if(methodcall_info->service_name)
+
+            if (methodcall_info->service_name)
             {
                 free(methodcall_info->service_name);
             }
-            if(methodcall_info->params)
+
+            if (methodcall_info->params)
             {
                 free(methodcall_info->params);
             }
+
             free(methodcall_info);
         }
     }
     dbus_error_free(&dbus_error);
+
+    return;
 }
 
 void *leda_methodcb_thread(void *arg)
 {
     leda_connect_info_t *connect_info = (leda_connect_info_t *)arg;
-    DBusMessage *message = NULL;
-    DBusMessage *reply = NULL;
-    const char *method_name = NULL;
-    int msg_type;
-    char *cloud_id = NULL;
-    
-    log_d(LEDA_TAG_NAME, "leda_method_thread\r\n");
+    int                 msg_type;
+    DBusMessage         *message      = NULL;
+    DBusMessage         *reply        = NULL;
+    const char          *method_name  = NULL;
+    char                *cloud_id     = NULL;
+
+    log_d(LEDA_TAG_NAME, "starting leda_method_thread 0x%lx\n", pthread_self());
 
     if ((NULL == connect_info) || (NULL == connect_info->connection))
     {
-        log_e(LEDA_TAG_NAME, "connect_info is invalid\r\n");
-        pthread_exit(0);
+        log_w(LEDA_TAG_NAME, "connect_info is invalid\n");
+        pthread_exit(NULL);
     }
 
     leda_pool_init(connect_info->trpool_num);
 
-    prctl(PR_SET_NAME, "leda_main_thread");
-
+    prctl(PR_SET_NAME, "leda_dbus_loop_thread");
     while (dbus_connection_get_is_connected(connect_info->connection))
     {
         dbus_connection_read_write(connect_info->connection, 10);
@@ -1186,7 +1155,8 @@ void *leda_methodcb_thread(void *arg)
                     break;
                 } 
             }
-            if(cloud_id)
+    
+            if (cloud_id)
             {
                 free(cloud_id);
             }
@@ -1197,20 +1167,19 @@ void *leda_methodcb_thread(void *arg)
         {
             leda_pool_destroy();
             free(connect_info);
-            pthread_exit(0);
+            pthread_exit(NULL);
         }
     }
 
     if (RUN_STATE_NORMAL == g_run_state)
     {
-        log_f(LEDA_TAG_NAME, "the connection with the dbus daemon disconnect!!! the driver have to exit!!!\r\n");
-        exit(0);
+        log_f(LEDA_TAG_NAME, "Unknown reason happend(maybe dbus daemon exit or os has exception), the driver connection with the dbus daemon is disconnected. \n");
     }
 
     return NULL;
 }
 
-leda_device_configcb_t *leda_get_device_configcb_by_name(const char *module_name)
+leda_device_configcb_t *leda_get_device_configcb_by_name(const char *module_id)
 {
     leda_device_configcb_t *pos             = NULL; 
     leda_device_configcb_t *next            = NULL; 
@@ -1219,7 +1188,7 @@ leda_device_configcb_t *leda_get_device_configcb_by_name(const char *module_name
     pthread_mutex_lock(&g_device_configcb_lock);
     list_for_each_entry_safe(pos, next, &leda_device_configcb_head, list_node)
     {
-        if (strcmp(pos->module_name, module_name) == 0)
+        if (strcmp(pos->module_id, module_id) == 0)
         {
             device_configcb = pos;
             break;
@@ -1230,12 +1199,12 @@ leda_device_configcb_t *leda_get_device_configcb_by_name(const char *module_name
     return device_configcb;
 }
 
-int leda_insert_device_configcb(const char *module_name, config_changed_callback onchanged_device_configcb)
+int leda_insert_device_configcb(const char *module_id, config_changed_callback onchanged_device_configcb)
 {
-    char                    *tmp_module_name = NULL;
+    char                    *tmp_module_id   = NULL;
     leda_device_configcb_t  *device_configcb = NULL;
 
-    device_configcb = leda_get_device_configcb_by_name(module_name);
+    device_configcb = leda_get_device_configcb_by_name(module_id);
     if (NULL != device_configcb)
     {
         device_configcb->device_configcb = onchanged_device_configcb;
@@ -1245,20 +1214,20 @@ int leda_insert_device_configcb(const char *module_name, config_changed_callback
     device_configcb = (leda_device_configcb_t *)malloc(sizeof(leda_device_configcb_t));
     if (NULL == device_configcb)
     {
-        log_e(LEDA_TAG_NAME, "no memory\r\n");
+        log_w(LEDA_TAG_NAME, "no memory can allocate\n");
         return LE_ERROR_ALLOCATING_MEM;
     }
 
-    tmp_module_name = (char*)malloc(strlen(module_name) + 1);
-    if (NULL == tmp_module_name)
+    tmp_module_id = (char*)malloc(strlen(module_id) + 1);
+    if (NULL == tmp_module_id)
     {
-        log_e(LEDA_TAG_NAME, "no memory\r\n");
+        log_w(LEDA_TAG_NAME, "no memory can allocate\n");
         free(device_configcb);
         return LE_ERROR_ALLOCATING_MEM;
     }
-    strcpy(tmp_module_name, module_name);
+    strcpy(tmp_module_id, module_id);
 
-    device_configcb->module_name = tmp_module_name;
+    device_configcb->module_id = tmp_module_id;
     device_configcb->device_configcb = onchanged_device_configcb;
 
     pthread_mutex_lock(&g_device_configcb_lock);
