@@ -14,8 +14,7 @@
 `注`：不建议使用 DockerHub 中的相应镜像
 
 ### Ubuntu 16.04 (x86_64)
-
-镜像可以从这里[下载](http://releases.ubuntu.com/xenial/ubuntu-16.04.5-desktop-amd64.iso)，关于不同版本的介绍见[链接](http://releases.ubuntu.com/xenial/)
+镜像可以从这里[下载](http://releases.ubuntu.com/xenial/ubuntu-16.04.6-desktop-amd64.iso)，关于不同版本的介绍见[链接](http://releases.ubuntu.com/xenial/)
 
 ### CentOS 7.0 (x86_64)
 
