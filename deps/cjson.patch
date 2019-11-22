@@ -1,0 +1,11 @@
+--- Makefile.org	2019-07-11 21:09:32.000000000 +0800
++++ Makefile	2019-07-11 21:10:09.000000000 +0800
+@@ -15,7 +15,7 @@ UTILS_SOVERSION = 1
+ CJSON_SO_LDFLAG=-Wl,-soname=$(CJSON_LIBNAME).so.$(CJSON_SOVERSION)
+ UTILS_SO_LDFLAG=-Wl,-soname=$(UTILS_LIBNAME).so.$(UTILS_SOVERSION)
+ 
+-PREFIX ?= /usr/local
++PREFIX ?=
+ INCLUDE_PATH ?= include/cjson
+ LIBRARY_PATH ?= lib
+ 

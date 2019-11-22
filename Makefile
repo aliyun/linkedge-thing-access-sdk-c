@@ -24,7 +24,7 @@ install:
 # delete compile resource
 distclean: clean
 	-$(RM) -r ./build
-	-$(RM) -r ./deps/cJSON-master/
+	-$(RM) -r ./deps/cJSON-1.7.7/
 	-$(RM) -r ./deps/dbus-1.10.18/
 	-$(RM) -r ./deps/libexpat/
 
