@@ -1,3 +1,5 @@
+[中文](README.md)|[English](README-en.md)
+
 # `设备接入SDK版本更新注意事项：`
 1. 设备接入SDK在[v1.0.0](https://github.com/aliyun/linkedge-thing-access-sdk-c/releases)版本进行重构，部分接口不兼容老版本接口，即使用v1.0.0之前版本SDK开发的驱动，可能导致无法直接使用v1.0.0版本升级；
 2. 使用v1.0.0版本SDK开发的驱动支持[Link IoT Edge版本](https://help.aliyun.com/document_detail/120995.html?spm=a2c4g.11186623.6.553.1ffe4224dxnjxT)1.8.1至最新版本；
