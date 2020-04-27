@@ -49,7 +49,7 @@ static int get_properties_callback_cb(device_handle_t dev_handle,
 
         if (!strcmp(properties[i].key, "temperature"))
         {
-            /* 作为演示，填写获取属性数据为模拟数据 */
+            /* as a demonstration, fill in simulated data to get properities call */
             properties[i].type = LEDA_TYPE_INT;
             sprintf(properties[i].value, "%d", g_dev_temperature);
 
@@ -68,7 +68,7 @@ static int set_properties_callback_cb(device_handle_t dev_handle,
     int i = 0;
     for (i = 0; i < properties_count; i++)
     {
-        /* 作为演示，仅打印出设置属性信息 */
+        /* as a demonstration, only print requst conetent to set properties call */
         log_i(TAG_DEMO_LED, "set_property type:%d %s: %s\n", properties[i].type, properties[i].key, properties[i].value);
 
         if (!strcmp(properties[i].key, "temperature"))
@@ -91,16 +91,13 @@ static int call_service_callback_cb(device_handle_t dev_handle,
 {
     int i = 0;
 
-    /* service_name为该驱动物模型自定义方法名称 */
+    /* as a demonstration, only print requst conetent to custom call */
     log_i(TAG_DEMO_LED, "service_name: %s\n", service_name);
     
-    /* 获取service_name方法的参数名称和值信息 */
     for (i = 0; i < data_count; i++)
     {
         log_i(TAG_DEMO_LED, "service input_data %s: %s\n", data[i].key, data[i].value);
     }
-
-    /* 此处错位演示并没有执行真正的自定义方法 */
 
     return LE_SUCCESS;
 }
@@ -122,7 +119,7 @@ static int online_devices()
     leda_device_callback_t      device_cb;
     device_handle_t             dev_handle      = -1;
 
-    /* 获取驱动设备配置 */
+    /* get device config */
     size = leda_get_device_info_size();
     if (size >0)
     {
@@ -140,7 +137,7 @@ static int online_devices()
         }
     }
 
-    /* 解析驱动设备配置 */
+    /* parse device config */
     devices = cJSON_Parse(device_config);
     if (NULL == devices)
     {
@@ -152,7 +149,7 @@ static int online_devices()
     {
         if (cJSON_Object == item->type)
         {
-            /* 解析配置内容 */
+            /* parse config element */
             result      = cJSON_GetObjectItem(item, "productKey");
             productKey  = result->valuestring;
             
@@ -165,7 +162,7 @@ static int online_devices()
                 log_i(TAG_DEMO_LED, "custom content: %s\n", cJSON_PrintUnformatted(result));
             }
 
-            /* 注册并上线设备 */
+            /* online device */
             device_cb.get_properties_cb            = get_properties_callback_cb;
             device_cb.set_properties_cb            = set_properties_callback_cb;
             device_cb.call_service_cb              = call_service_callback_cb;
@@ -199,24 +196,24 @@ int main(int argc, char** argv)
 
     log_init(TAG_DEMO_LED, LOG_STDOUT, LOG_LEVEL_DEBUG, LOG_MOD_BRIEF);
 
-    /* 初始驱动 */
+    /* init leda*/
     if (LE_SUCCESS != (ret = leda_init(5)))
     {
         log_e(TAG_DEMO_LED, "leda_init failed\n");
         return ret;
     }
 
-    /* 上线设备 */
+    /* online devices */
     if (LE_SUCCESS != (ret = online_devices()))
     {
         log_e(TAG_DEMO_LED, "online devices failed\n");
         return ret;
     }
 
-    /* 上报数据 */
+    /* report device data */
     while (1)
     {
-        /* 上报属性 */
+        /* report device properties */
         leda_device_data_t dev_proper_data[1] = 
         {
             {
@@ -228,7 +225,7 @@ int main(int argc, char** argv)
         sprintf(dev_proper_data[0].value, "%d", g_dev_temperature);
         leda_report_properties(g_dev_handle, dev_proper_data, 1);
 
-        /* 上报事件 */
+        /* report device events */
         if (g_dev_temperature > 50)
         {
             leda_device_data_t dev_event_data[1] = 
@@ -246,7 +243,7 @@ int main(int argc, char** argv)
         sleep(5);
     }
 
-    /* 退出驱动 */
+    /* exit leda */
     leda_exit();
 
     return LE_SUCCESS;
