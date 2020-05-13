@@ -22,27 +22,6 @@
 
 镜像可以从这里[下载](http://vault.centos.org/7.0.1406/isos/x86_64/CentOS-7.0-1406-x86_64-DVD.iso)，关于不同版本的介绍见[链接](https://wiki.centos.org/Download)
 
-### 交叉编译
-
-如果需要交叉编译设备接入SDK，则需要在build-cross-compile.sh脚本中选择填写编译目标结构和编译工具链信息：
-
-``` sh
-     # 编译目标Arch选择
-     export HOST=x86_64
-     export ARCH=arm-linux-gnueabihf
-     export TARGET=${ARCH}
-
-     # 编译工具链选择
-     export CROSS_ROOT=#the root dir path of cross compile tool-chain
-     export CROSS_COMPILE=${CROSS_ROOT}/bin/arm-linux-gnueabihf-
-     export CC=${CROSS_COMPILE}gcc
-     export CXX=${CROSS_COMPILE}g++
-     export LD=${CROSS_COMPILE}ld
-     export AR=${CROSS_COMPILE}ar
-     export RANLIB=${CROSS_COMPILE}ranlib
-     export STRIP=${CROSS_COMPILE}strip
-```
-
 ## 编译依赖
 
 ### 依赖工具
@@ -74,7 +53,7 @@ dbus           | 1.2.1+  |
 `demo_led`示例演示将设备接入Link IoT Edge的过程。
 
 ### demo编译
-
+#### 标准编译（X86平台）
 ``` sh
     $git clone git@github.com:aliyun/linkedge-thing-access-sdk-c.git
 
@@ -83,6 +62,29 @@ dbus           | 1.2.1+  |
     $make prepare              #预编译生成外部依赖库
 
     $make && make install      #生成leda_sdk_c和demo
+```
+#### 交叉编译（ARM平台）
+第一步，编辑build-cross-compile.sh脚本，填写编译目标结构和编译工具链信息
+``` sh
+     # 编译目标Arch选择
+     export HOST=x86_64
+     export ARCH=arm-linux-gnueabihf
+     export TARGET=${ARCH}
+
+     # 在CROSS_ROOT填写交叉编译工具链目录位置
+     export CROSS_ROOT=
+     export CROSS_COMPILE=${CROSS_ROOT}/bin/arm-linux-gnueabihf-
+     export CC=${CROSS_COMPILE}gcc
+     export CXX=${CROSS_COMPILE}g++
+     export LD=${CROSS_COMPILE}ld
+     export AR=${CROSS_COMPILE}ar
+     export RANLIB=${CROSS_COMPILE}ranlib
+     export STRIP=${CROSS_COMPILE}strip
+```
+
+第二步，执行build-cross-compile.sh脚本
+``` sh
+    $./build-cross-compile.sh   #生成leda_sdk_c和demo
 ```
 
 ### demo演示
